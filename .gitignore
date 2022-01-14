@@ -1,0 +1,11 @@
+#Variabili
+/.env
+
+#File giocatori locali
+/player/*.json
+
+#Session del bot
+/bot.session
+/bot.session.journal
+/venv/
+/.idea/
