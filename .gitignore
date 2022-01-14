@@ -6,6 +6,6 @@
 
 #Session del bot
 /bot.session
-/bot.session.journal
+/bot.session-journal
 /venv/
 /.idea/
