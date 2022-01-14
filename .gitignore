@@ -2,7 +2,7 @@
 /.env
 
 #File giocatori locali
-/player/*.json
+#/player/*.json
 
 #Session del bot
 /bot.session
