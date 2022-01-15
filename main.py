@@ -1,6 +1,7 @@
 from telethon import events, TelegramClient
 from telethon.tl.custom import Button
 from dotenv import load_dotenv
+from random import randint
 import json
 import asyncio
 import random
@@ -23,6 +24,8 @@ with open('oggetti.json') as f:
 with open('registered.json') as f:
     registrati = json.load(f)
 
+infermeria = []
+
 
 async def main():
     await bot.start()
@@ -42,6 +45,8 @@ async def start(event):
         await bot.send_message(chat, "Ciao bellezza!\nProva ad usare /scheda o /cerca!")
         my_dict = {"Username": sender,
                    "Stop": False,
+                   "Lancio": False,
+                   "HP": "50",
                    "Userid": uid,
                    "Gender": "Imposta il tuo genere con /sesso",
                    "Age": "Imposta la tua età con /anni",
@@ -105,7 +110,14 @@ async def anni(event):
     else:
         async with bot.conversation(chat) as conv:
             await conv.send_message('Quanti anni hai?')
-            response = await conv.get_response()
+            answer = None
+            while answer != uid:
+                response = await conv.get_response()
+                print(response)
+                try:
+                    answer = response.from_id.user_id
+                except:
+                    answer = response.peer_id.user_id
             ann = response.text
             if not ann.isdecimal():
                 await bot.send_message(chat, 'L\'età deve essere un numero!')
@@ -231,7 +243,9 @@ async def daioggetto(event):
             if not cercagift:
                 await bot.send_message(chat, "Non possiedi questo oggetto!")
             else:
-                if len(set(cercagift)) == 1:
+                if len(set(cercagift)) > 1:
+                    await bot.send_message(chat, "Troppi oggetti con quel nome!")
+                else:
                     pr_gift = cercagift[0]
                     pr_player = cercaplayer[0]
                     idricevente = registrati[pr_player]
@@ -248,8 +262,62 @@ async def daioggetto(event):
                         json.dump(my_dict, filey)
                     await bot.send_message(idricevente, "{} ti ha dato {}!".format(sender, pr_gift))
                     print(sender + " ha dato " + pr_gift + " a " + pr_player)
+
+
+async def lancia(event):
+    uid = (await event.get_sender()).id
+    chat = await event.get_input_chat()
+    sender = (await event.get_sender()).username
+    with open("player/" + str(uid) + '.json') as file:
+        my_dict = json.load(file)
+    att_lancio = my_dict["Lancio"]
+    parts = event.raw_text.split(" ", 2)
+    if att_lancio:
+        await bot.send_message(chat, "Ti devi ancora riprendere dall\'ultimo lancio!")
+    elif sender in infermeria:
+        await bot.send_message(chat, "Non hai un bell'aspetto, aspetta di riprenderti un po' prima di lanciare oggetti!")
+    else:
+        if len(parts) != 3:
+            await bot.send_message(chat, "Per lanciare un oggeto usa /lancia <Giocaotre> <Oggetto>")
+        else:
+            target = parts[1]
+            ammo = parts[2].lower()
+            if target not in registrati:
+                await bot.send_message(chat, "Lanciare oggetti è pericoloso, scrivi per bene il nome di chi vuoi colpire!")
+            else:
+                with open("player/" + str(uid) + '.json') as file:
+                    my_dict = json.load(file)
+                inventario = my_dict["Inventario"]
+                bullet = [matchx for matchx in inventario if ammo in matchx.lower()]
+                if not bullet:
+                    await bot.send_message(chat, "Non possiedi questo oggetto!")
                 else:
-                    await bot.send_message(chat, "Troppi oggetti con quel nome!")
+                    if len(set(bullet)) > 1:
+                        await bot.send_message(chat, "Troppi oggetti con quel nome!")
+                    else:
+                        bullet = bullet[0]
+                        idtarget = registrati[target]
+                        danni = randint(1, 6)
+                        with open("player/" + str(uid) + '.json') as filex:
+                            my_dict = json.load(filex)
+                        my_dict["Inventario"].remove(bullet)
+                        my_dict["Lancio"] = not att_lancio
+                        with open("player/" + str(uid) + '.json', 'w') as filex:
+                            json.dump(my_dict, filex)
+                        await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!".format(bullet, target, danni))
+                        await aspettalancia(uid)
+                        return
+
+
+async def aspettalancia(uid):
+    with open("player/" + str(uid) + '.json') as file:
+        my_dict = json.load(file)
+    att_lancio = my_dict["Lancio"]
+    await asyncio.sleep(45)
+    my_dict["Lancio"] = not att_lancio
+    with open("player/" + str(uid) + '.json', 'w') as file:
+        json.dump(my_dict, file)
+    await bot.send_message(uid, "Puoi lanciare un altro oggetto!")
 
 
 @bot.on(events.NewMessage(pattern=r'(?i).*heck'))
@@ -284,6 +352,9 @@ with bot:
             await cercaoggetto(event)
         elif '/dai' in event.raw_text:
             await daioggetto(event)
+        elif '/lancia' in event.raw_text:
+            await lancia(event)
+
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
