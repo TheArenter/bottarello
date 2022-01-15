@@ -231,22 +231,25 @@ async def daioggetto(event):
             if not cercagift:
                 await bot.send_message(chat, "Non possiedi questo oggetto!")
             else:
-                pr_gift = cercagift[0]
-                pr_player = cercaplayer[0]
-                idricevente = registrati[pr_player]
-                with open("player/" + str(uid) + '.json') as filex:
-                    my_dict = json.load(filex)
-                my_dict["Inventario"].remove(pr_gift)
-                with open("player/" + str(uid) + '.json', 'w') as filex:
-                    json.dump(my_dict, filex)
-                await bot.send_message(uid, "Hai dato {} a {}!".format(pr_gift, pr_player))
-                with open("player/" + str(idricevente) + '.json') as filey:
-                    my_dict = json.load(filey)
-                my_dict["Inventario"].append(pr_gift)
-                with open("player/" + str(idricevente) + '.json', 'w') as filey:
-                    json.dump(my_dict, filey)
-                await bot.send_message(idricevente, "{} ti ha dato {}!".format(sender, pr_gift))
-                print(sender + " ha dato " + pr_gift + " a " + pr_player)
+                if len(set(cercagift)) == 1:
+                    pr_gift = cercagift[0]
+                    pr_player = cercaplayer[0]
+                    idricevente = registrati[pr_player]
+                    with open("player/" + str(uid) + '.json') as filex:
+                        my_dict = json.load(filex)
+                    my_dict["Inventario"].remove(pr_gift)
+                    with open("player/" + str(uid) + '.json', 'w') as filex:
+                        json.dump(my_dict, filex)
+                    await bot.send_message(uid, "Hai dato {} a {}!".format(pr_gift, pr_player))
+                    with open("player/" + str(idricevente) + '.json') as filey:
+                        my_dict = json.load(filey)
+                    my_dict["Inventario"].append(pr_gift)
+                    with open("player/" + str(idricevente) + '.json', 'w') as filey:
+                        json.dump(my_dict, filey)
+                    await bot.send_message(idricevente, "{} ti ha dato {}!".format(sender, pr_gift))
+                    print(sender + " ha dato " + pr_gift + " a " + pr_player)
+                else:
+                    await bot.send_message(chat, "Troppi oggetti con quel nome!")
 
 
 @bot.on(events.NewMessage(pattern=r'(?i).*heck'))
