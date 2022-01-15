@@ -25,6 +25,12 @@ with open('registered.json') as f:
     registrati = json.load(f)
 
 infermeria = []
+bullets = ["un sasso [C]", "una scarpa [C]", "una matita [C]", "una cernia [T]", "un dildo glitterato [E]",
+           "una mela [C]", "un Ewan McGregor nudo [G]", "una zucchina ambigua [NC]","un telecomando [C]",
+           "un cartone di Tavernello [C]", "una guida pratica al \"Bongisloffo\" [R]"]
+rapina = False
+ladro = []
+refurtiva = []
 
 
 async def main():
@@ -155,7 +161,7 @@ async def aspettacerca(uid):
     with open("player/" + str(uid) + '.json') as file:
         my_dict = json.load(file)
     att_cerca = my_dict["Stop"]
-    await asyncio.sleep(30)
+    await asyncio.sleep(60)
     my_dict["Stop"] = not att_cerca
     with open("player/" + str(uid) + '.json', 'w') as file:
         json.dump(my_dict, file)
@@ -275,7 +281,8 @@ async def lancia(event):
     if att_lancio:
         await bot.send_message(chat, "Ti devi ancora riprendere dall\'ultimo lancio!")
     elif sender in infermeria:
-        await bot.send_message(chat, "Non hai un bell'aspetto, aspetta di riprenderti un po' prima di lanciare oggetti!")
+        await bot.send_message(chat, "Non hai un bell'aspetto, aspetta di riprenderti un po' prima di"
+                                     " lanciare oggetti!")
     else:
         if len(parts) != 3:
             await bot.send_message(chat, "Per lanciare un oggeto usa /lancia <Giocaotre> <Oggetto>")
@@ -283,7 +290,8 @@ async def lancia(event):
             target = parts[1]
             ammo = parts[2].lower()
             if target not in registrati:
-                await bot.send_message(chat, "Lanciare oggetti è pericoloso, scrivi per bene il nome di chi vuoi colpire!")
+                await bot.send_message(chat, "Lanciare oggetti è pericoloso,"
+                                             " scrivi per bene il nome di chi vuoi colpire!")
             else:
                 with open("player/" + str(uid) + '.json') as file:
                     my_dict = json.load(file)
@@ -296,30 +304,49 @@ async def lancia(event):
                         await bot.send_message(chat, "Troppi oggetti con quel nome!")
                     else:
                         bullet = bullet[0]
-                        idtarget = registrati[target]
-                        danni = randint(1, 6)
-                        with open("player/" + str(uid) + '.json') as filex:
-                            my_dict = json.load(filex)
-                        my_dict["Inventario"].remove(bullet)
-                        my_dict["Lancio"] = not att_lancio
-                        with open("player/" + str(uid) + '.json', 'w') as filex:
-                            json.dump(my_dict, filex)
-                        await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!".format(bullet, target, danni))
-                        with open("player/" + str(idtarget) + '.json') as filey:
-                            my_dict = json.load(filey)
-                        vita = my_dict["HP"]
-                        my_dict["HP"] = vita - danni
-                        print(my_dict["HP"])
-                        with open("player/" + str(idtarget) + '.json', 'w') as filey:
-                            json.dump(my_dict, filey)
-                        await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha tolto {} HP!".format(sender, bullet, danni))
-                        #  await bot.send_message(idtarget, "{} ha lanciato {} a {} e gli ha tolto {} HP!".format(sender, bullet, target, danni))
-                        await aspettalancia(uid)
-                        await controllohp(target, idtarget)
+                        if bullet not in bullets:
+                            await bot.send_message(uid, "Questo non lo puoi lanciare!")
+                        else:
+                            idtarget = registrati[target]
+                            danni = randint(1, 6)
+                            with open("player/" + str(uid) + '.json') as filex:
+                                my_dict = json.load(filex)
+                            my_dict["Inventario"].remove(bullet)
+                            my_dict["Lancio"] = not att_lancio
+                            with open("player/" + str(uid) + '.json', 'w') as filex:
+                                json.dump(my_dict, filex)
+                            await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!".format(bullet,
+                                                                                                             target,
+                                                                                                             danni))
+                            with open("player/" + str(idtarget) + '.json') as filey:
+                                my_dict = json.load(filey)
+                            vita = my_dict["HP"]
+                            my_dict["HP"] = vita - danni
+                            with open("player/" + str(idtarget) + '.json', 'w') as filey:
+                                json.dump(my_dict, filey)
+                            await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha tolto {} HP!".format(sender,
+                                                                                                                bullet,
+                                                                                                                danni))
+                            if event.is_group:
+                                await bot.send_message(chat, "{} ha lanciato {} a {} e gli ha tolto {} HP!".format(sender, bullet, target, danni))
+                            await aspettalancia(uid)
+                            await controllohp(target, idtarget, uid)
 
-# TODO scrivere controllo HP
-async def controllohp(target, idtarget):
-    return
+
+async def controllohp(target, idtarget, uid):
+    with open("player/" + str(idtarget) + '.json') as filey:
+        my_dict = json.load(filey)
+    vita = my_dict["HP"]
+    if vita <= 0:
+        infermeria.append(target)
+        print(infermeria)
+        await bot.send_message(idtarget, "L'ultimo colpo ti ha fatto perdere i sensi, vieni portato in infermeria!")
+        await bot.send_message(uid, "Con il tuo ultimo colpo hai spedito {} in infermeria!".format(target))
+        await asyncio.sleep(900)
+        my_dict["HP"] = 50
+        with open("player/" + str(idtarget) + '.json', 'w') as filey:
+            json.dump(my_dict, filey)
+        await bot.send_message(idtarget, "Ti sgranchisci le gambe ed esci dall'infermeria!")
 
 
 async def aspettalancia(uid):
@@ -333,6 +360,37 @@ async def aspettalancia(uid):
     await bot.send_message(uid, "Puoi lanciare un altro oggetto!")
 
 
+async def furto(event):
+    global ladro
+    global refurtiva
+    global rapina
+    ladro = (await event.get_sender()).username
+    if rapina:
+        await bot.send_message(ladro, "C'è già un furto in corso, i tuoi misfatti dovranno attendere!")
+    else:
+        prob = randint(1, 10)
+        vittima = random.choice([n for n in list(registrati.keys()) if n not in ladro])
+        print(vittima)
+        idtarget = registrati[vittima]
+        with open("player/" + str(idtarget) + '.json') as file:
+            my_dict = json.load(file)
+        sacca = my_dict["Inventario"]
+        refurtiva = random.choice(sacca)
+        if not refurtiva:
+            await bot.send_message(ladro, "Ti è anadata male, la tua vittima ha lo zaino vuoto!")
+        else:
+            my_dict["Inventario"].remove(refurtiva)
+            if prob <= 5:
+                rapina = not rapina
+                await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro di te!".format(refurtiva,
+                                                                                                                      vittima))
+                await bot.send_message(vittima, "Senti lo zaino stranamente leggero e dopo pochi istanti ti accorgi che"
+                                                " effettivamente ti manca {}".format(refurtiva),
+                                       buttons=[Button.inline('Indaga 🔍', b'indaga')])
+            else:
+                await bot.send_message(ladro, "Hai rubato {} a {} e te la sei svignata agevolmente!".format(refurtiva, vittima))
+
+
 @bot.on(events.NewMessage(pattern=r'(?i).*heck'))
 async def handler(event):
     await event.delete()
@@ -343,6 +401,7 @@ async def handler(event):
 with bot:
     @bot.on(events.NewMessage)
     async def handler(event):
+        print(event)
         #  global lastmessage
         #  lastmessage = event.raw_text
         if '/start' in event.raw_text:
@@ -367,6 +426,16 @@ with bot:
             await daioggetto(event)
         elif '/lancia' in event.raw_text:
             await lancia(event)
+        elif '/lancia' in event.raw_text:
+            await lancia(event)
+        elif '/ruba' in event.raw_text:
+            chat = await event.get_input_chat()
+            if event.is_group:
+                message = event.message
+                await message.delete()
+                await bot.send_message(chat, "Meglio usarlo in privato...")
+            else:
+                await furto(event)
 
 
 if __name__ == '__main__':
