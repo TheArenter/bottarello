@@ -305,8 +305,21 @@ async def lancia(event):
                         with open("player/" + str(uid) + '.json', 'w') as filex:
                             json.dump(my_dict, filex)
                         await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!".format(bullet, target, danni))
+                        with open("player/" + str(idtarget) + '.json') as filey:
+                            my_dict = json.load(filey)
+                        vita = my_dict["HP"]
+                        my_dict["HP"] = vita - danni
+                        print(my_dict["HP"])
+                        with open("player/" + str(idtarget) + '.json', 'w') as filey:
+                            json.dump(my_dict, filey)
+                        await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha tolto {} HP!".format(sender, bullet, danni))
+                        #  await bot.send_message(idtarget, "{} ha lanciato {} a {} e gli ha tolto {} HP!".format(sender, bullet, target, danni))
                         await aspettalancia(uid)
-                        return
+                        await controllohp(target, idtarget)
+
+# TODO scrivere controllo HP
+async def controllohp(target, idtarget):
+    return
 
 
 async def aspettalancia(uid):
