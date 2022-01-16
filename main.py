@@ -271,6 +271,7 @@ async def daioggetto(event):
 
 
 async def lancia(event):
+    gruppo = event.is_group
     uid = (await event.get_sender()).id
     chat = await event.get_input_chat()
     sender = (await event.get_sender()).username
@@ -292,6 +293,8 @@ async def lancia(event):
             if target not in registrati:
                 await bot.send_message(chat, "Lanciare oggetti è pericoloso,"
                                              " scrivi per bene il nome di chi vuoi colpire!")
+            elif target in infermeria:
+                await bot.send_message(chat, "{} non sembra avere un bell'aspetto, lasciamo che riposi!".format(target))
             else:
                 with open("player/" + str(uid) + '.json') as file:
                     my_dict = json.load(file)
@@ -329,11 +332,11 @@ async def lancia(event):
                                                                                                                 danni))
                             if event.is_group:
                                 await bot.send_message(chat, "{} ha lanciato {} a {} e gli ha tolto {} HP!".format(sender, bullet, target, danni))
+                            await controllohp(target, idtarget, uid, chat, gruppo)
                             await aspettalancia(uid)
-                            await controllohp(target, idtarget, uid)
 
 
-async def controllohp(target, idtarget, uid):
+async def controllohp(target, idtarget, uid, chat, gruppo):
     with open("player/" + str(idtarget) + '.json') as filey:
         my_dict = json.load(filey)
     vita = my_dict["HP"]
@@ -342,11 +345,15 @@ async def controllohp(target, idtarget, uid):
         print(infermeria)
         await bot.send_message(idtarget, "L'ultimo colpo ti ha fatto perdere i sensi, vieni portato in infermeria!")
         await bot.send_message(uid, "Con il tuo ultimo colpo hai spedito {} in infermeria!".format(target))
+        if gruppo:
+            await bot.send_message(chat, "{} cade al suolo senza sensi!".format(target))
         await asyncio.sleep(900)
         my_dict["HP"] = 50
         with open("player/" + str(idtarget) + '.json', 'w') as filey:
             json.dump(my_dict, filey)
         await bot.send_message(idtarget, "Ti sgranchisci le gambe ed esci dall'infermeria!")
+        if gruppo:
+            await bot.send_message(chat, "{} è di nuovo in piena forma!".format(target))
 
 
 async def aspettalancia(uid):
@@ -364,6 +371,7 @@ async def furto(event):
     global ladro
     global refurtiva
     global rapina
+    uid = (await event.get_sender()).id
     ladro = (await event.get_sender()).username
     if rapina:
         await bot.send_message(ladro, "C'è già un furto in corso, i tuoi misfatti dovranno attendere!")
@@ -372,14 +380,21 @@ async def furto(event):
         vittima = random.choice([n for n in list(registrati.keys()) if n not in ladro])
         print(vittima)
         idtarget = registrati[vittima]
-        with open("player/" + str(idtarget) + '.json') as file:
-            my_dict = json.load(file)
+        with open("player/" + str(idtarget) + '.json') as filex:
+            my_dict = json.load(filex)
         sacca = my_dict["Inventario"]
         refurtiva = random.choice(sacca)
         if not refurtiva:
             await bot.send_message(ladro, "Ti è anadata male, la tua vittima ha lo zaino vuoto!")
         else:
             my_dict["Inventario"].remove(refurtiva)
+            with open("player/" + str(idtarget) + '.json', 'w') as filex:
+                json.dump(my_dict, filex)
+            with open("player/" + str(idtarget) + '.json') as filey:
+                my_dict = json.load(filey)
+            my_dict["Inventario"] += [refurtiva]
+            with open("player/" + str(uid) + '.json', 'w') as filey:
+                json.dump(my_dict, filey)
             if prob <= 5:
                 rapina = not rapina
                 await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro di te!".format(refurtiva,
