@@ -26,7 +26,7 @@ with open('registered.json') as f:
 
 infermeria = []
 bullets = ["un sasso [C]", "una scarpa [C]", "una matita [C]", "una cernia [T]", "un dildo glitterato [E]",
-           "una mela [C]", "un Ewan McGregor nudo [G]", "una zucchina ambigua [NC]","un telecomando [C]",
+           "una mela [C]", "un Ewan McGregor nudo [G]", "una zucchina ambigua [NC]", "un telecomando [C]",
            "un cartone di Tavernello [C]", "una guida pratica al \"Bongisloffo\" [R]"]
 rapina = False
 ladro = []
@@ -342,11 +342,11 @@ async def lancia(event):
                             my_dict["HP"] = vita - danni
                             with open("player/" + str(idtarget) + '.json', 'w') as filey:
                                 json.dump(my_dict, filey)
-                            await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha tolto {} HP!".format(sender,
-                                                                                                                bullet,
-                                                                                                                danni))
+                            await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha "
+                                                             "tolto {} HP!".format(sender, bullet, danni))
                             if event.is_group:
-                                await bot.send_message(chat, "{} ha lanciato {} a {} e gli ha tolto {} HP!".format(sender, bullet, target, danni))
+                                await bot.send_message(chat, "{} ha lanciato {} a {} e gli ha "
+                                                             "tolto {} HP!".format(sender, bullet, target, danni))
                             await controllohp(target, idtarget, uid, chat, gruppo)
                             await aspettalancia(uid)
 
@@ -414,13 +414,14 @@ async def furto(event):
                 json.dump(my_dict, filey)
             if prob <= 5:
                 rapina = not rapina
-                await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro di te!".format(refurtiva,
-                                                                                                                      vittima))
+                await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro "
+                                              "di te!".format(refurtiva, vittima))
                 await bot.send_message(vittima, "Senti lo zaino stranamente leggero e dopo pochi istanti ti accorgi che"
                                                 " effettivamente ti manca {}".format(refurtiva),
                                        buttons=[Button.inline('Indaga 🔍', b'indaga')])
             else:
-                await bot.send_message(ladro, "Hai rubato {} a {} e te la sei svignata agevolmente!".format(refurtiva, vittima))
+                await bot.send_message(ladro, "Hai rubato {} a {} e te la sei svignata "
+                                              "agevolmente!".format(refurtiva, vittima))
 
 
 @bot.on(events.NewMessage(pattern=r'(?i).*heck'))
