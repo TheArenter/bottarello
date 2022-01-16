@@ -31,6 +31,7 @@ bullets = ["un sasso [C]", "una scarpa [C]", "una matita [C]", "una cernia [T]",
 rapina = False
 ladro = []
 refurtiva = []
+rarity = ["[C]", "[NC]", "[R]", "[E]", "[L]", "[S]", "[SS]", "[I]", "[G]", "[Shock]", "[T]"]
 
 
 async def main():
@@ -176,9 +177,11 @@ async def zaino(event):
     inventario = my_dict["Inventario"]
     tot = len(set(inventario))
     sacca = "Possiedi (" + str(tot) + "):\n"
-    for x in inventario:
-        if x not in sacca:
-            sacca += x + " x " + str(inventario.count(x)) + "\n"
+    for x in rarity:
+        for item in inventario:
+            if x in item:
+                if item not in sacca:
+                    sacca += item + " x " + str(inventario.count(item)) + "\n"
     await bot.send_message(chat, sacca)
 
 
