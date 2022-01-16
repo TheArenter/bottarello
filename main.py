@@ -158,9 +158,6 @@ async def cerca(event):
 
 
 async def aspettacerca(uid):
-    #  with open("player/" + str(uid) + '.json') as filecer:
-    #      my_dict = json.load(filecer)
-    #  att_cerca = my_dict["Stop"]
     await asyncio.sleep(60)
     with open("player/" + str(uid) + '.json') as filecer:
         my_dict = json.load(filecer)
@@ -377,9 +374,6 @@ async def controllohp(target, idtarget, uid, chat, gruppo):
 
 
 async def aspettalancia(uid):
-    #  with open("player/" + str(uid) + '.json') as filelan:
-    #    my_dict = json.load(filelan)
-    #  att_lancio = my_dict["Lancio"]
     await asyncio.sleep(45)
     with open("player/" + str(uid) + '.json') as filelan:
         my_dict = json.load(filelan)
