@@ -57,12 +57,12 @@ async def start(event):
                    "Gender": "Imposta il tuo genere con /sesso",
                    "Age": "Imposta la tua età con /anni",
                    "Inventario": []}
-        with open("player/" + str(uid) + '.json', 'w') as file:
-            json.dump(my_dict, file)
+        with open("player/" + str(uid) + '.json', 'w') as filesta:
+            json.dump(my_dict, filesta)
         coppia = {sender: uid}
         registrati.update(coppia)
-        with open('registered.json', 'w') as file:
-            json.dump(registrati, file)
+        with open('registered.json', 'w') as filesta:
+            json.dump(registrati, filesta)
 
 
 @bot.on(events.CallbackQuery(data=b'Maschio'))
@@ -74,18 +74,18 @@ async def scsesso(event):
     else:
         gender = "Femmina"
     await event.edit('Hai impostato il tuo genere su {}!'.format(gender))
-    with open("player/" + str(uid) + '.json') as file:
-        my_dict = json.load(file)
+    with open("player/" + str(uid) + '.json') as filesex:
+        my_dict = json.load(filesex)
     my_dict["Gender"] = gender
-    with open("player/" + str(uid) + '.json', 'w') as file:
-        json.dump(my_dict, file)
+    with open("player/" + str(uid) + '.json', 'w') as filesex:
+        json.dump(my_dict, filesex)
 
 
 async def scheda(event):
     chat = await event.get_input_chat()
     uid = (await event.get_sender()).id
-    with open("player/" + str(uid) + '.json') as file:
-        my_dict = json.load(file)
+    with open("player/" + str(uid) + '.json') as filesch:
+        my_dict = json.load(filesch)
     testo = "La tua scheda:"
     ignora = ['Inventario']
     for the_key, the_value in my_dict.items():
@@ -97,8 +97,8 @@ async def scheda(event):
 async def sesso(event):
     chat = await event.get_input_chat()
     uid = (await event.get_sender()).id
-    with open("player/" + str(uid) + '.json') as file:
-        my_dict = json.load(file)
+    with open("player/" + str(uid) + '.json') as filesex:
+        my_dict = json.load(filesex)
     if my_dict['Gender'] == "Imposta il tuo genere con /sesso" or my_dict['Gender'] == "":
         await bot.send_message(chat, 'Sei un Maschio o una Femmina?',
                                buttons=[Button.inline('Maschio', 'Maschio'), Button.inline('Femmina', 'Femmina')])
@@ -109,8 +109,8 @@ async def sesso(event):
 async def anni(event):
     chat = await event.get_input_chat()
     uid = (await event.get_sender()).id
-    with open("player/" + str(uid) + '.json') as file:
-        my_dict = json.load(file)
+    with open("player/" + str(uid) + '.json') as fileage:
+        my_dict = json.load(fileage)
     if my_dict['Age'] != "Imposta la tua età con /anni" and my_dict['Age'] != "":
         await bot.send_message(chat, 'Hai già impostato la tua età a {} anni!'.format(my_dict['Age']))
     else:
@@ -131,16 +131,16 @@ async def anni(event):
             else:
                 await bot.send_message(chat, 'Hai impostato la tua età a {}'.format(ann))
                 my_dict["Age"] = ann
-                with open("player/" + str(uid) + '.json', 'w') as file:
-                    json.dump(my_dict, file)
+                with open("player/" + str(uid) + '.json', 'w') as fileage:
+                    json.dump(my_dict, fileage)
 
 
 async def cerca(event):
     chat = await event.get_input_chat()
     uid = (await event.get_sender()).id
     sender = (await event.get_sender()).username
-    with open("player/" + str(uid) + '.json') as file:
-        my_dict = json.load(file)
+    with open("player/" + str(uid) + '.json') as filecer:
+        my_dict = json.load(filecer)
     att_cerca = my_dict["Stop"]
     if att_cerca:
         await bot.send_message(chat, "Devi aspettare ancora un po'")
@@ -152,27 +152,30 @@ async def cerca(event):
         print(sender + ": " + oggetto)
         my_dict["Inventario"] += [oggetto]
         my_dict["Stop"] = not att_cerca
-        with open("player/" + str(uid) + '.json', 'w') as file:
-            json.dump(my_dict, file)
+        with open("player/" + str(uid) + '.json', 'w') as filecer:
+            json.dump(my_dict, filecer)
         await aspettacerca(uid)
 
 
 async def aspettacerca(uid):
-    with open("player/" + str(uid) + '.json') as file:
-        my_dict = json.load(file)
-    att_cerca = my_dict["Stop"]
+    #  with open("player/" + str(uid) + '.json') as filecer:
+    #      my_dict = json.load(filecer)
+    #  att_cerca = my_dict["Stop"]
     await asyncio.sleep(60)
+    with open("player/" + str(uid) + '.json') as filecer:
+        my_dict = json.load(filecer)
+    att_cerca = my_dict["Stop"]
     my_dict["Stop"] = not att_cerca
-    with open("player/" + str(uid) + '.json', 'w') as file:
-        json.dump(my_dict, file)
+    with open("player/" + str(uid) + '.json', 'w') as filecer:
+        json.dump(my_dict, filecer)
     await bot.send_message(uid, "Puoi tornare a cercare!")
 
 
 async def zaino(event):
     chat = await event.get_input_chat()
     uid = (await event.get_sender()).id
-    with open("player/" + str(uid) + '.json') as file:
-        my_dict = json.load(file)
+    with open("player/" + str(uid) + '.json') as filebag:
+        my_dict = json.load(filebag)
     inventario = my_dict["Inventario"]
     tot = len(set(inventario))
     sacca = "Possiedi (" + str(tot) + "):\n"
@@ -195,8 +198,8 @@ async def additem(event):
         else:
             arg = parts[1]
             oggetti.append(arg)
-            with open('oggetti.json', 'w') as file:
-                json.dump(oggetti, file)
+            with open('oggetti.json', 'w') as fileitem:
+                json.dump(oggetti, fileitem)
             await bot.send_message(chat, "Ho aggiunto {} all'elenco!".format(arg))
             print(oggetti)
 
@@ -205,8 +208,8 @@ async def cercaoggetto(event):
     global oggetti
     uid = (await event.get_sender()).id
     chat = await event.get_input_chat()
-    with open("player/" + str(uid) + '.json') as file:
-        my_dict = json.load(file)
+    with open("player/" + str(uid) + '.json') as filefind:
+        my_dict = json.load(filefind)
     inventario = my_dict["Inventario"]
     parts = event.raw_text.split(" ", 1)
     if len(parts) <= 1:
@@ -242,8 +245,8 @@ async def daioggetto(event):
         if not cercaplayer:
             await bot.send_message(chat, "Non ho trovato questo giocatore!")
         else:
-            with open("player/" + str(uid) + '.json') as file:
-                my_dict = json.load(file)
+            with open("player/" + str(uid) + '.json') as filegive:
+                my_dict = json.load(filegive)
             inventario = my_dict["Inventario"]
             cercagift = [matchx for matchx in inventario if gift in matchx.lower()]
             if not cercagift:
@@ -275,15 +278,21 @@ async def lancia(event):
     uid = (await event.get_sender()).id
     chat = await event.get_input_chat()
     sender = (await event.get_sender()).username
-    with open("player/" + str(uid) + '.json') as file:
-        my_dict = json.load(file)
+    with open("player/" + str(uid) + '.json') as filelan:
+        my_dict = json.load(filelan)
     att_lancio = my_dict["Lancio"]
     parts = event.raw_text.split(" ", 2)
     if att_lancio:
-        await bot.send_message(chat, "Ti devi ancora riprendere dall\'ultimo lancio!")
+        if event.is_group:
+            await event.reply("Ti devi ancora riprendere dall\'ultimo lancio!")
+        else:
+            await bot.send_message(chat, "Ti devi ancora riprendere dall\'ultimo lancio!")
     elif sender in infermeria:
-        await bot.send_message(chat, "Non hai un bell'aspetto, aspetta di riprenderti un po' prima di"
-                                     " lanciare oggetti!")
+        if event.is_group:
+            await event.reply("Non hai un bell'aspetto, aspetta di riprenderti un po' prima di lanciare oggetti!")
+        else:
+            await bot.send_message(chat, "Non hai un bell'aspetto, aspetta di riprenderti un po' prima di"
+                                         " lanciare oggetti!")
     else:
         if len(parts) != 3:
             await bot.send_message(chat, "Per lanciare un oggeto usa /lancia <Giocaotre> <Oggetto>")
@@ -296,19 +305,28 @@ async def lancia(event):
             elif target in infermeria:
                 await bot.send_message(chat, "{} non sembra avere un bell'aspetto, lasciamo che riposi!".format(target))
             else:
-                with open("player/" + str(uid) + '.json') as file:
-                    my_dict = json.load(file)
+                with open("player/" + str(uid) + '.json') as filelan:
+                    my_dict = json.load(filelan)
                 inventario = my_dict["Inventario"]
                 bullet = [matchx for matchx in inventario if ammo in matchx.lower()]
                 if not bullet:
-                    await bot.send_message(chat, "Non possiedi questo oggetto!")
+                    if event.is_group:
+                        await event.reply("Non possiedi questo oggetto!")
+                    else:
+                        await bot.send_message(chat, "Non possiedi questo oggetto!")
                 else:
                     if len(set(bullet)) > 1:
-                        await bot.send_message(chat, "Troppi oggetti con quel nome!")
+                        if event.is_group:
+                            await event.reply("Troppi oggetti con quel nome!")
+                        else:
+                            await bot.send_message(chat, "Troppi oggetti con quel nome!")
                     else:
                         bullet = bullet[0]
                         if bullet not in bullets:
-                            await bot.send_message(uid, "Questo non lo puoi lanciare!")
+                            if event.is_group:
+                                await event.reply("Questo non lo puoi lanciare!")
+                            else:
+                                await bot.send_message(chat, "Questo non lo puoi lanciare!")
                         else:
                             idtarget = registrati[target]
                             danni = randint(1, 6)
@@ -337,8 +355,8 @@ async def lancia(event):
 
 
 async def controllohp(target, idtarget, uid, chat, gruppo):
-    with open("player/" + str(idtarget) + '.json') as filey:
-        my_dict = json.load(filey)
+    with open("player/" + str(idtarget) + '.json') as filehp:
+        my_dict = json.load(filehp)
     vita = my_dict["HP"]
     if vita <= 0:
         infermeria.append(target)
@@ -348,22 +366,27 @@ async def controllohp(target, idtarget, uid, chat, gruppo):
         if gruppo:
             await bot.send_message(chat, "{} cade al suolo senza sensi!".format(target))
         await asyncio.sleep(900)
+        with open("player/" + str(idtarget) + '.json') as filehp:
+            my_dict = json.load(filehp)
         my_dict["HP"] = 50
-        with open("player/" + str(idtarget) + '.json', 'w') as filey:
-            json.dump(my_dict, filey)
+        with open("player/" + str(idtarget) + '.json', 'w') as filehp:
+            json.dump(my_dict, filehp)
         await bot.send_message(idtarget, "Ti sgranchisci le gambe ed esci dall'infermeria!")
         if gruppo:
             await bot.send_message(chat, "{} è di nuovo in piena forma!".format(target))
 
 
 async def aspettalancia(uid):
-    with open("player/" + str(uid) + '.json') as file:
-        my_dict = json.load(file)
-    att_lancio = my_dict["Lancio"]
+    #  with open("player/" + str(uid) + '.json') as filelan:
+    #    my_dict = json.load(filelan)
+    #  att_lancio = my_dict["Lancio"]
     await asyncio.sleep(45)
+    with open("player/" + str(uid) + '.json') as filelan:
+        my_dict = json.load(filelan)
+    att_lancio = my_dict["Lancio"]
     my_dict["Lancio"] = not att_lancio
-    with open("player/" + str(uid) + '.json', 'w') as file:
-        json.dump(my_dict, file)
+    with open("player/" + str(uid) + '.json', 'w') as filelan:
+        json.dump(my_dict, filelan)
     await bot.send_message(uid, "Puoi lanciare un altro oggetto!")
 
 
@@ -452,7 +475,7 @@ with bot:
             else:
                 await furto(event)
 
-
+# TODO creare funzione lettura dati
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
