@@ -9,3 +9,4 @@
 /bot.session-journal
 /venv/
 /.idea/
+/test.py

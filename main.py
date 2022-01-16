@@ -260,7 +260,7 @@ async def daioggetto(event):
                     my_dict["Inventario"].remove(pr_gift)
                     with open("player/" + str(uid) + '.json', 'w') as filex:
                         json.dump(my_dict, filex)
-                    await bot.send_message(uid, "Hai dato {} a {}!".format(pr_gift, pr_player))
+                    await event.reply("Hai dato {} a {}!".format(pr_gift, pr_player))
                     with open("player/" + str(idricevente) + '.json') as filey:
                         my_dict = json.load(filey)
                     my_dict["Inventario"].append(pr_gift)
