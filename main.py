@@ -30,7 +30,7 @@ refurtiva = []
 rapina = False
 bullets = ["un sasso [C]", "una scarpa [C]", "una matita [C]", "una cernia [T]", "un dildo glitterato [E]",
            "una mela [C]", "un Ewan McGregor nudo [G]", "una zucchina ambigua [NC]", "un telecomando [C]",
-           "un cartone di Tavernello [C]", "una guida pratica al \"Bongisloffo\" [R]"]
+           "un cartone di Tavernello [C]", "una guida pratica al \"Bongisloffo\" [R]", "una professoressa sexy [R]"]
 rarity = ["[C]", "[NC]", "[R]", "[E]", "[L]", "[S]", "[SS]", "[I]", "[G]", "[Shock]", "[T]"]
 
 
@@ -88,6 +88,28 @@ async def scsesso(event):
     my_dict = await opendict(uid)
     my_dict["Gender"] = gender
     await writedict(uid, my_dict)
+
+
+@bot.on(events.CallbackQuery(data=b'indaga'))
+async def scindaga(event):
+    global rapina
+    global ladro
+    prob = randint(1, 10)
+    if prob <= 5:
+        await event.edit('Purtroppo gli indizi non ti hanno portato a nulla!')
+        ladro = []
+        rapina = not rapina
+    else:
+        idladro = registrati[ladro]
+        my_dict = await opendict(idladro)
+        ladrohp = my_dict["HP"]
+        my_dict["HP"] = ladrohp - 10
+        await writedict(idladro, my_dict)
+        await event.edit('Hai scoperto il ladro, il tuo oggetto è perso, ma gli hai dato una bella lezione')
+        await bot.send_message(idladro, 'Sei stato scoperto! Ti hanno dato una bella lezione ed hai perso 10 HP!')
+        rapina = not rapina
+        ladro = []
+        await controllohp(ladro, event)
 
 
 async def scheda(event):
@@ -267,7 +289,6 @@ async def daioggetto(event):
 
 
 async def lancia(event):
-    gruppo = event.is_group
     uid = (await event.get_sender()).id
     chat = await event.get_input_chat()
     sender = (await event.get_sender()).username
@@ -337,11 +358,15 @@ async def lancia(event):
                             if event.is_group:
                                 await bot.send_message(chat, "{} ha lanciato {} a {} e gli ha "
                                                              "tolto {} HP!".format(sender, bullet, target, danni))
-                            await controllohp(target, idtarget, uid, chat, gruppo)
+                            await controllohp(target, event)
                             await aspettalancia(uid)
 
 
-async def controllohp(target, idtarget, uid, chat, gruppo):
+async def controllohp(target, event):
+    uid = (await event.get_sender()).id
+    chat = await event.get_input_chat()
+    idtarget = registrati[target]
+    gruppo = event.is_group
     my_dict = await opendict(idtarget)
     vita = my_dict["HP"]
     if vita <= 0:
@@ -374,35 +399,38 @@ async def furto(event):
     global refurtiva
     global rapina
     uid = (await event.get_sender()).id
-    ladro = (await event.get_sender()).username
-    if rapina:
-        await bot.send_message(ladro, "C'è già un furto in corso, i tuoi misfatti dovranno attendere!")
+    if ladro in infermeria:
+        await bot.send_message(ladro, "Sei in infermeria, non è il caso di tentare un furto!")
     else:
-        prob = randint(1, 10)
-        vittima = random.choice([n for n in list(registrati.keys()) if n not in ladro])
-        print(vittima)
-        idtarget = registrati[vittima]
-        my_dict = await opendict(idtarget)
-        sacca = my_dict["Inventario"]
-        refurtiva = random.choice(sacca)
-        if not refurtiva:
-            await bot.send_message(ladro, "Ti è anadata male, la tua vittima ha lo zaino vuoto!")
+        if rapina:
+            await bot.send_message(ladro, "C'è già un furto in corso, i tuoi misfatti dovranno attendere!")
         else:
-            my_dict["Inventario"].remove(refurtiva)
-            await writedict(idtarget, my_dict)
-            my_dict = await opendict(uid)
-            my_dict["Inventario"] += [refurtiva]
-            await writedict(uid, my_dict)
-            if prob <= 5:
-                rapina = not rapina
-                await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro "
-                                              "di te!".format(refurtiva, vittima))
-                await bot.send_message(vittima, "Senti lo zaino stranamente leggero e dopo pochi istanti ti accorgi che"
-                                                " effettivamente ti manca {}".format(refurtiva),
-                                       buttons=[Button.inline('Indaga 🔍', b'indaga')])
+            prob = randint(1, 10)
+            vittima = random.choice([n for n in list(registrati.keys()) if n not in ladro])
+            print(vittima)
+            idtarget = registrati[vittima]
+            my_dict = await opendict(idtarget)
+            sacca = my_dict["Inventario"]
+            refurtiva = random.choice(sacca)
+            if not refurtiva:
+                await bot.send_message(ladro, "Ti è anadata male, la tua vittima ha lo zaino vuoto!")
             else:
-                await bot.send_message(ladro, "Hai rubato {} a {} e te la sei svignata "
-                                              "agevolmente!".format(refurtiva, vittima))
+                my_dict["Inventario"].remove(refurtiva)
+                await writedict(idtarget, my_dict)
+                my_dict = await opendict(uid)
+                my_dict["Inventario"] += [refurtiva]
+                await writedict(uid, my_dict)
+                if prob <= 5:
+                    rapina = not rapina
+                    ladro = (await event.get_sender()).username
+                    await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro "
+                                                  "di te!".format(refurtiva, vittima))
+                    await bot.send_message(vittima, "Senti lo zaino stranamente leggero e dopo pochi istanti ti accorgi che"
+                                                    " effettivamente ti manca {}".format(refurtiva),
+                                           buttons=[Button.inline('Indaga 🔍', b'indaga')])
+                else:
+                    await bot.send_message(ladro, "Hai rubato {} a {} e te la sei svignata "
+                                                  "agevolmente!".format(refurtiva, vittima))
 
 
 @bot.on(events.NewMessage(pattern=r'(?i).*heck'))
@@ -450,6 +478,11 @@ with bot:
                 await bot.send_message(chat, "Meglio usarlo in privato...")
             else:
                 await furto(event)
+#        Comando di test per varie funzioni
+#        elif '/test' in event.raw_text:
+#            chat = await event.get_input_chat()
+#            text = "***"
+#            await bot.send_message(chat, text, buttons=[Button.inline(text='Cacca', data=b'domanda 165777046 5 0 601'), Button.inline(text='Pipì', data=b'domanda 165777046 5 1 601')])
 
 
 if __name__ == '__main__':
