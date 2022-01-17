@@ -422,7 +422,18 @@ async def aspettalancia(uid):
 
 async def furto(event):
     global ladro
+    ladro = (await event.get_sender()).username
+    print(ladro)
     global refurtiva
+    vittima = random.choice([n for n in list(registrati.keys()) if n not in ladro])
+    print(vittima)
+    idtarget = registrati[vittima]
+    print(idtarget)
+    my_dict = await opendict(idtarget)
+    sacca = my_dict["Inventario"]
+    print(sacca)
+    refurtiva = random.choice(sacca)
+    print(refurtiva)
     global rapina
     uid = (await event.get_sender()).id
     if ladro in infermeria:
@@ -432,12 +443,6 @@ async def furto(event):
             await bot.send_message(ladro, "C'è già un furto in corso, i tuoi misfatti dovranno attendere!")
         else:
             prob = randint(1, 10)
-            vittima = random.choice([n for n in list(registrati.keys()) if n not in ladro])
-            print(vittima)
-            idtarget = registrati[vittima]
-            my_dict = await opendict(idtarget)
-            sacca = my_dict["Inventario"]
-            refurtiva = random.choice(sacca)
             if not refurtiva:
                 await bot.send_message(ladro, "Ti è anadata male, la tua vittima ha lo zaino vuoto!")
             else:
@@ -448,7 +453,6 @@ async def furto(event):
                 await writedict(uid, my_dict)
                 if prob <= 5:
                     rapina = not rapina
-                    ladro = (await event.get_sender()).username
                     await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro "
                                                   "di te!".format(refurtiva, vittima))
                     await bot.send_message(vittima, "Senti lo zaino stranamente leggero e dopo pochi istanti ti "
@@ -502,7 +506,8 @@ with bot:
             chat = await event.get_input_chat()
             if event.is_group:
                 message = event.message
-                await message.delete()
+                status = await message.delete()
+                print(status)
                 await bot.send_message(chat, "Meglio usarlo in privato...")
             else:
                 await furto(event)
