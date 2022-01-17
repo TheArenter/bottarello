@@ -29,10 +29,9 @@ ladro = []
 refurtiva = []
 rapina = False
 bullets = ["un sasso [C]", "una scarpa [C]", "una matita [C]", "una cernia [T]", "un dildo glitterato [E]",
-           "una mela [C]", "un Ewan McGregor nudo [G]", "una zucchina ambigua [NC]", "un telecomando [C]",
+           "una mela [C]", "un Ewan McGregor nudo [S]", "una zucchina ambigua [NC]", "un telecomando [C]",
            "un cartone di Tavernello [C]", "una guida pratica al \"Bongisloffo\" [R]", "una professoressa sexy [R]"]
-rarity = ["[C]", "[NC]", "[R]", "[E]", "[L]", "[S]", "[SS]", "[I]", "[G]", "[Shock]", "[T]"]
-
+rarity = ["[SS]", "[S]", "[L]", "[E]", "[R]", "[NC]", "[C]"]
 
 async def main():
     await bot.start()
@@ -226,14 +225,14 @@ async def additem(event):
 
 
 async def cercaoggetto(event):
-    global oggetti
+    # global oggetti
     uid = (await event.get_sender()).id
     chat = await event.get_input_chat()
     my_dict = await opendict(uid)
     inventario = my_dict["Inventario"]
     parts = event.raw_text.split(" ", 1)
     if len(parts) <= 1:
-        await bot.send_message(chat, "Oggetto non specificato!")
+        await bot.send_message(chat, "Per cercare un oggeto usa /oggetti <Oggetto>")
     else:
         arg = parts[1].lower()
         if len(arg) < 3:
@@ -244,6 +243,33 @@ async def cercaoggetto(event):
                 await bot.send_message(chat, "Non possiedi questo oggetto!")
             else:
                 text = "Ho trovato:\n"
+                for match in matches:
+                    if match not in text:
+                        num = matches.count(match)
+                        text += str(match) + " x " + str(num) + "\n"
+                await bot.send_message(chat, text)
+
+
+async def totoggetti(event):
+    chat = await event.get_input_chat()
+    parts = event.raw_text.split(" ", 1)
+    if len(parts) <= 1:
+        await bot.send_message(chat, "Per cercare un oggeto usa /oggetti <Oggetto>")
+    else:
+        arg = parts[1].lower()
+        if len(arg) < 3:
+            await bot.send_message(chat, "Mi servono almeno 3 lettere per cercare un oggetto!")
+        else:
+            tot = []
+            for key, value in registrati.items():
+                my_dict = await opendict(value)
+                list2 = my_dict["Inventario"]
+                tot.extend(list2)
+            matches = [match for match in tot if arg in match.lower()]
+            if not matches:
+                await bot.send_message(chat, "Nessun oggetto trovato!")
+            else:
+                text = "Sono presenti in gioco:\n"
                 for match in matches:
                     if match not in text:
                         num = matches.count(match)
@@ -425,8 +451,8 @@ async def furto(event):
                     ladro = (await event.get_sender()).username
                     await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro "
                                                   "di te!".format(refurtiva, vittima))
-                    await bot.send_message(vittima, "Senti lo zaino stranamente leggero e dopo pochi istanti ti accorgi che"
-                                                    " effettivamente ti manca {}".format(refurtiva),
+                    await bot.send_message(vittima, "Senti lo zaino stranamente leggero e dopo pochi istanti ti "
+                                                    "accorgi che effettivamente ti manca {}".format(refurtiva),
                                            buttons=[Button.inline('Indaga 🔍', b'indaga')])
                 else:
                     await bot.send_message(ladro, "Hai rubato {} a {} e te la sei svignata "
@@ -464,6 +490,8 @@ with bot:
             await additem(event)
         elif '/oggetto' in event.raw_text:
             await cercaoggetto(event)
+        elif '/oggetti' in event.raw_text:
+            await totoggetti(event)
         elif '/dai' in event.raw_text:
             await daioggetto(event)
         elif '/lancia' in event.raw_text:
@@ -482,7 +510,8 @@ with bot:
 #        elif '/test' in event.raw_text:
 #            chat = await event.get_input_chat()
 #            text = "***"
-#            await bot.send_message(chat, text, buttons=[Button.inline(text='Cacca', data=b'domanda 165777046 5 0 601'), Button.inline(text='Pipì', data=b'domanda 165777046 5 1 601')])
+#            await bot.send_message(chat, text,
+#            buttons=[Button.inline(text='Cacca', data=b'risp1'), Button.inline(text='Pipì', data=b'risp2')])
 
 
 if __name__ == '__main__':
