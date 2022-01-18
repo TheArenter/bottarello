@@ -112,8 +112,8 @@ async def scindaga(event):
         await bot.send_message(idladro, 'Sei stato scoperto! Ti hanno dato una bella lezione ed hai perso 10 HP!')
         rapina = not rapina
         print(rapina)
-        ladro = []
         await controllohp(ladro, event)
+        ladro = []
 
 
 async def scheda(event):
@@ -230,7 +230,6 @@ async def additem(event):
 
 
 async def cercaoggetto(event):
-    # global oggetti
     uid = (await event.get_sender()).id
     chat = await event.get_input_chat()
     my_dict = await opendict(uid)
