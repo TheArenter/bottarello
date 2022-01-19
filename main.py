@@ -297,10 +297,9 @@ async def daioggetto(event):
         if len(parts) < 2:
             await bot.send_message(chat, "Per dare un oggeto usa /dai <Giocaotre> <Oggetto>")
         else:
-            cont = parts[1].lower()
+            cont = parts[1]
             gift = parts[2].lower()
-            cercaplayer = [match for match in registrati if cont in match.lower()]
-            if not cercaplayer:
+            if cont not in registrati:
                 await bot.send_message(chat, "Non ho trovato questo giocatore!")
             else:
                 my_dict = await opendict(uid)
@@ -313,17 +312,55 @@ async def daioggetto(event):
                         await bot.send_message(chat, "Troppi oggetti con quel nome!")
                     else:
                         pr_gift = cercagift[0]
-                        pr_player = cercaplayer[0]
-                        idricevente = registrati[pr_player]
+                        idricevente = registrati[cont]
                         my_dict = await opendict(uid)
                         my_dict["Inventario"].remove(pr_gift)
                         await writedict(uid, my_dict)
-                        await event.reply("Hai dato {} a {}!".format(pr_gift, pr_player))
+                        await event.reply("Hai dato {} a {}!".format(pr_gift, cont))
                         my_dict = await opendict(idricevente)
                         my_dict["Inventario"].append(pr_gift)
                         await writedict(idricevente, my_dict)
                         await bot.send_message(idricevente, "{} ti ha dato {}!".format(sender, pr_gift))
-                        print(sender + " ha dato " + pr_gift + " a " + pr_player)
+                        print(sender + " ha dato " + pr_gift + " a " + cont)
+
+
+async def giveitem(event):
+    global registrati
+    chat = await event.get_input_chat()
+    sender = (await event.get_sender()).username
+    parts = event.raw_text.split(" ", 3)
+    print(parts)
+    if len(parts) < 3:
+        await bot.send_message(chat, "Per dare un oggeto usa /dai <Giocaotre> <Oggetto> <Quantità>")
+    else:
+        cont = parts[1]
+        print(cont)
+        gift = parts[2].lower()
+        print(gift)
+        count = parts[3]
+        if cont not in registrati:
+
+            await bot.send_message(chat, "Non ho trovato questo giocatore!")
+        else:
+            cercagift = [matchx for matchx in oggetti if gift in matchx.lower()]
+            if not cercagift:
+                await bot.send_message(chat, "Oggetto sconosciuto!")
+            else:
+                if not count.isdecimal():
+                    await bot.send_message(chat, "Non hai specificato un numero valido per la quantità!")
+                else:
+                    if len(set(cercagift)) > 1:
+                        await bot.send_message(chat, "Troppi oggetti con quel nome!")
+                    else:
+                        pr_gift = cercagift[0]
+                        idricevente = registrati[cont]
+                        await event.reply("Hai dato {} x {} a {}!".format(count, pr_gift, cont))
+                        for i in range(int(count)):
+                            my_dict = await opendict(idricevente)
+                            my_dict["Inventario"].append(pr_gift)
+                            await writedict(idricevente, my_dict)
+                        await bot.send_message(idricevente, "{} ti ha dato {} x {}!".format(sender, count, pr_gift))
+                        print(sender + " ha dato " + count + " x " + pr_gift + " a " + cont)
 
 
 async def lancia(event):
@@ -388,7 +425,7 @@ async def lancia(event):
                                     my_dict["Inventario"].remove(bullet)
                                     my_dict["Lancio"] = not att_lancio
                                     await writedict(uid, my_dict)
-                                    await freccetta(target)
+                                    await freccetta(target, chat)
                                     await aspettalancia(uid)
                                     return
                                 else:
@@ -398,9 +435,8 @@ async def lancia(event):
                                     my_dict["Inventario"].remove(bullet)
                                     my_dict["Lancio"] = not att_lancio
                                     await writedict(uid, my_dict)
-                                    await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!".format(bullet,
-                                                                                                                     target,
-                                                                                                                     danni))
+                                    await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!"
+                                                           .format(bullet, target, danni))
                                     my_dict = await opendict(idtarget)
                                     vita = my_dict["HP"]
                                     my_dict["HP"] = vita - danni
@@ -409,7 +445,8 @@ async def lancia(event):
                                                                      "tolto {} HP!".format(sender, bullet, danni))
                                     if event.is_group:
                                         await bot.send_message(chat, "{} ha lanciato {} a {} e gli ha "
-                                                                     "tolto {} HP!".format(sender, bullet, target, danni))
+                                                                     "tolto {} HP!".format(sender, bullet, target,
+                                                                                           danni))
                                     if target in sonno:
                                         sonno.remove(target)
                                         await bot.send_message(target, "Il colpo ti ha svegliato!")
@@ -454,10 +491,13 @@ async def aspettalancia(uid):
     await bot.send_message(uid, "Puoi lanciare un altro oggetto!")
 
 
-async def freccetta(target):
+async def freccetta(target, chat):
     sonno.append(target)
     print(sonno)
-    await bot.send_message(target, "Sei stato colpito da una freccetta tranquillante e sei caduto in un sonno profondo!")
+    await bot.send_message(target, "Sei stato colpito da una freccetta tranquillante "
+                                   "e sei caduto in un sonno profondo!")
+    await bot.send_message(chat, "Hai colpito {}, lo vedi cadere al suolo "
+                                 "addormentato!".format(target))
     await asyncio.sleep(15)
     sonno.remove(target)
     print(sonno)
@@ -470,48 +510,53 @@ async def furto(event):
     ladro = (await event.get_sender()).username
     uid = (await event.get_sender()).id
     chat = await event.get_input_chat()
-    if rapina:
-        await bot.send_message(uid, "C'è già un furto in corso, i tuoi misfatti dovranno attendere!")
-    elif ladro in sonno:
-        await bot.send_message(chat, "Stai dormendo profonfamente e non riesci a svegliarti!")
+    if event.is_group:
+        message = event.message
+        await message.delete()
+        await bot.send_message(chat, "Meglio usarlo in privato...")
     else:
-        print(ladro)
-        global refurtiva
-        vittima = random.choice([n for n in list(registrati.keys()) if n not in ladro])
-        print(vittima)
-        idtarget = registrati[vittima]
-        print(idtarget)
-        my_dict = await opendict(idtarget)
-        sacca = my_dict["Inventario"]
-        print(sacca)
-        uid = (await event.get_sender()).id
-        if ladro in infermeria:
-            await bot.send_message(ladro, "Sei in infermeria, non è il caso di tentare un furto!")
+        if rapina:
+            await bot.send_message(uid, "C'è già un furto in corso, i tuoi misfatti dovranno attendere!")
+        elif ladro in sonno:
+            await bot.send_message(chat, "Stai dormendo profonfamente e non riesci a svegliarti!")
         else:
-            prob = randint(1, 10)
-            if not sacca:
-                await bot.send_message(ladro, "Ti è anadata male, la tua vittima ha lo zaino vuoto!")
+            print(ladro)
+            global refurtiva
+            vittima = random.choice([n for n in list(registrati.keys()) if n not in ladro])
+            print(vittima)
+            idtarget = registrati[vittima]
+            print(idtarget)
+            my_dict = await opendict(idtarget)
+            sacca = my_dict["Inventario"]
+            print(sacca)
+            uid = (await event.get_sender()).id
+            if ladro in infermeria:
+                await bot.send_message(ladro, "Sei in infermeria, non è il caso di tentare un furto!")
             else:
-                refurtiva = random.choice(sacca)
-                print(refurtiva)
-                my_dict["Inventario"].remove(refurtiva)
-                await writedict(idtarget, my_dict)
-                my_dict = await opendict(uid)
-                my_dict["Inventario"] += [refurtiva]
-                await writedict(uid, my_dict)
-                if prob <= 5:
-                    rapina = not rapina
-                    print(ladro + " " + vittima + " " + refurtiva + " Ha lasciato tracce..." + " rapina impostato su"
-                          + str(rapina))
-                    await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro "
-                                                  "di te!".format(refurtiva, vittima))
-                    await bot.send_message(vittima, "Senti lo zaino stranamente leggero e dopo pochi istanti ti "
-                                                    "accorgi che effettivamente ti manca {}".format(refurtiva),
-                                           buttons=[Button.inline('Indaga 🔍', b'indaga')])
+                prob = randint(1, 10)
+                if not sacca:
+                    await bot.send_message(ladro, "Ti è anadata male, la tua vittima ha lo zaino vuoto!")
                 else:
-                    print(ladro + " " + vittima + " " + refurtiva + " Non ha lasciato tracce...")
-                    await bot.send_message(ladro, "Hai rubato {} a {} e te la sei svignata "
-                                                  "agevolmente!".format(refurtiva, vittima))
+                    refurtiva = random.choice(sacca)
+                    print(refurtiva)
+                    my_dict["Inventario"].remove(refurtiva)
+                    await writedict(idtarget, my_dict)
+                    my_dict = await opendict(uid)
+                    my_dict["Inventario"] += [refurtiva]
+                    await writedict(uid, my_dict)
+                    if prob <= 5:
+                        rapina = not rapina
+                        print(ladro + " " + vittima + " " + refurtiva + " Ha lasciato tracce..." + " rapina impostato su"
+                              + str(rapina))
+                        await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro "
+                                                      "di te!".format(refurtiva, vittima))
+                        await bot.send_message(vittima, "Senti lo zaino stranamente leggero e dopo pochi istanti ti "
+                                                        "accorgi che effettivamente ti manca {}".format(refurtiva),
+                                               buttons=[Button.inline('Indaga 🔍', b'indaga')])
+                    else:
+                        print(ladro + " " + vittima + " " + refurtiva + " Non ha lasciato tracce...")
+                        await bot.send_message(ladro, "Hai rubato {} a {} e te la sei svignata "
+                                                      "agevolmente!".format(refurtiva, vittima))
 
 
 @bot.on(events.NewMessage(pattern=r'(?i).*heck'))
@@ -527,6 +572,14 @@ with bot:
         print(event)
         #  global lastmessage
         #  lastmessage = event.raw_text
+        sender = (await event.get_sender()).username
+        if sender == owner:
+            if '/additem' in event.raw_text:
+                await additem(event)
+            elif '/giveitem' in event.raw_text:
+                await giveitem(event)
+            elif 'hello' in event.raw_text:
+                await event.reply('hi!')
         if '/start' in event.raw_text:
             await start(event)
         elif '/sesso' in event.raw_text:
@@ -539,10 +592,6 @@ with bot:
             await cerca(event)
         elif '/zaino' in event.raw_text:
             await zaino(event)
-        elif 'hello' in event.raw_text:
-            await event.reply('hi!')
-        elif '/additem' in event.raw_text:
-            await additem(event)
         elif '/oggetto' in event.raw_text:
             await cercaoggetto(event)
         elif '/oggetti' in event.raw_text:
@@ -551,17 +600,8 @@ with bot:
             await daioggetto(event)
         elif '/lancia' in event.raw_text:
             await lancia(event)
-        elif '/lancia' in event.raw_text:
-            await lancia(event)
         elif '/ruba' in event.raw_text:
-            chat = await event.get_input_chat()
-            if event.is_group:
-                message = event.message
-                status = await message.delete()
-                print(status)
-                await bot.send_message(chat, "Meglio usarlo in privato...")
-            else:
-                await furto(event)
+            await furto(event)
 #        Comando di test per varie funzioni
 #        elif '/test' in event.raw_text:
 #            chat = await event.get_input_chat()
