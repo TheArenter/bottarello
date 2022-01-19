@@ -29,6 +29,7 @@ sonno = []
 ladro = []
 refurtiva = []
 rapina = False
+usabili = ["una pozione rossa [R] [usabile]"]  #  , "qualche goccia d'acqua [C] [usabile]", "un raggio di sole [C] [usabile]"]
 bullets = ["un sasso [C]", "una scarpa [C]", "una matita [C]", "una cernia [R]", "un dildo glitterato [E]",
            "una mela [C]", "un Ewan McGregor nudo [S]", "una zucchina ambigua [NC]", "un telecomando [C]",
            "un cartone di Tavernello [C]", "una guida pratica al \"Bongisloffo\" [R]", "una professoressa sexy [R]",
@@ -171,6 +172,13 @@ async def anni(event):
 async def cerca(event):
     sender = (await event.get_sender()).username
     chat = await event.get_input_chat()
+    prob = randint(1, 100)
+    oggettobonus = []
+    if prob <= 10:
+        bonus = True
+        oggettobonus = random.choice(usabili)
+    else:
+        bonus = False
     if sender in sonno:
         await bot.send_message(chat, "Stai dormendo profonfamente e non riesci a svegliarti!")
     else:
@@ -181,11 +189,12 @@ async def cerca(event):
             await bot.send_message(chat, "Devi aspettare ancora un po'")
         else:
             oggetto = random.choice(oggetti)
-            text = sender + " ti guardi un po' intorno ed alla fine in un grosso baule trovi **{}**." \
-                            "\nControlla il tuo zaino con /zaino".format(oggetto)
+            text = sender + " ti guardi un po' intorno ed alla fine in un grosso baule trovi **{}**.".format(oggetto) \
+                            + ("\nStranamente hai trovato anche **{}**".format(oggettobonus) if bonus else "") \
+                            + "\nControlla il tuo zaino con /zaino"
             await bot.send_message(chat, text)
-            print(sender + ": " + oggetto)
-            my_dict["Inventario"] += [oggetto]
+            my_dict["Inventario"] += [oggetto] + ([oggettobonus] if bonus else [])
+            print(sender + ": " + str([oggetto, oggettobonus]))
             my_dict["Stop"] = not att_cerca
             await writedict(uid, my_dict)
             await aspettacerca(uid)
@@ -339,10 +348,9 @@ async def giveitem(event):
         print(gift)
         count = parts[3]
         if cont not in registrati:
-
             await bot.send_message(chat, "Non ho trovato questo giocatore!")
         else:
-            cercagift = [matchx for matchx in oggetti if gift in matchx.lower()]
+            cercagift = [matchx for matchx in oggetti + usabili if gift in matchx.lower()]
             if not cercagift:
                 await bot.send_message(chat, "Oggetto sconosciuto!")
             else:
@@ -498,7 +506,7 @@ async def freccetta(target, chat):
                                    "e sei caduto in un sonno profondo!")
     await bot.send_message(chat, "Hai colpito {}, lo vedi cadere al suolo "
                                  "addormentato!".format(target))
-    await asyncio.sleep(15)
+    await asyncio.sleep(300)
     sonno.remove(target)
     print(sonno)
     await bot.send_message(target, "Abbastanza intontito, finalmente riesci a risprire gli occhi!")
@@ -559,6 +567,66 @@ async def furto(event):
                                                       "agevolmente!".format(refurtiva, vittima))
 
 
+async def useitem(event):
+    uid = (await event.get_sender()).id
+    chat = await event.get_input_chat()
+    sender = (await event.get_sender()).username
+    if sender in sonno:
+        await bot.send_message(chat, "Stai dormendo profonfamente e non riesci a svegliarti!")
+    else:
+        parts = event.raw_text.split(" ", 1)
+        if sender in infermeria:
+            if event.is_group:
+                await event.reply("Non hai abbastanza forze per usare questo oggetto!")
+            else:
+                await bot.send_message(chat, "Non hai abbastanza forze per usare questo oggetto!")
+        else:
+            if len(parts) != 2:
+                await bot.send_message(chat, "Per usare un oggeto usa /usa <Oggetto>")
+            else:
+                usablex = parts[1].lower()
+                my_dict = await opendict(uid)
+                inventario = my_dict["Inventario"]
+                usable = [matchx for matchx in inventario if usablex in matchx.lower()]
+                if not usable:
+                    if event.is_group:
+                        await event.reply("Non possiedi questo oggetto!")
+                    else:
+                        await bot.send_message(chat, "Non possiedi questo oggetto!")
+                else:
+                    if len(set(usable)) > 1:
+                        if event.is_group:
+                            await event.reply("Troppi oggetti con quel nome!")
+                        else:
+                            await bot.send_message(chat, "Troppi oggetti con quel nome!")
+                    else:
+                        usable = usable[0]
+                        if usable not in usabili:
+                            if event.is_group:
+                                await event.reply("Questo non lo puoi usare!")
+                            else:
+                                await bot.send_message(chat, "Questo non lo puoi usare!")
+                        else:
+                            if usable == "una pozione rossa [R] [usabile]":
+                                my_dict = await opendict(uid)
+                                hp = my_dict['HP']
+                                print(hp)
+                                if hp == 50:
+                                    await bot.send_message(chat, "Le pozioni sono rare, meglio non usarla quando sei "
+                                                                 "già in forma!")
+                                else:
+                                    cura = randint(1, 20)
+                                    postcura = hp + cura
+                                    if postcura <= 50:
+                                        my_dict["HP"] = postcura
+                                    else:
+                                        my_dict["HP"] = 50
+                                    my_dict["Inventario"].remove(usable)
+                                    await writedict(uid, my_dict)
+                                    await bot.send_message(chat, "Ti sei curato di {} HP, adesso hai {} HP!".format(cura, my_dict["HP"]))
+                                    return
+
+
 @bot.on(events.NewMessage(pattern=r'(?i).*heck'))
 async def handler(event):
     await event.delete()
@@ -602,6 +670,8 @@ with bot:
             await lancia(event)
         elif '/ruba' in event.raw_text:
             await furto(event)
+        elif '/usa' in event.raw_text:
+            await useitem(event)
 #        Comando di test per varie funzioni
 #        elif '/test' in event.raw_text:
 #            chat = await event.get_input_chat()
