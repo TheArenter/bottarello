@@ -34,7 +34,7 @@ bullets = ["un sasso [C]", "una scarpa [C]", "una matita [C]", "una cernia [R]",
            "una mela [C]", "un Ewan McGregor nudo [S]", "una zucchina ambigua [NC]", "un telecomando [C]",
            "un cartone di Tavernello [C]", "una guida pratica al \"Bongisloffo\" [R]", "una professoressa sexy [R]",
            "una freccetta tranquillante [S]"]
-rarity = ["[SS]", "[S]", "[L]", "[E]", "[R]", "[NC]", "[C]"]
+raritylist = ["[S]", "[L]", "[E]", "[R]", "[NC]", "[C]"]
 
 
 async def main():
@@ -169,14 +169,19 @@ async def anni(event):
                 await writedict(uid, my_dict)
 
 
+async def pickloot():
+    rarity = random.choices(raritylist, weights=(2.5, 5, 7.5, 15, 25, 45), k=1)[0]
+    loot = random.choice([item for item in oggetti if str(rarity) in item])
+    bonusloot = random.choice(usabili)
+    return loot, rarity, bonusloot
+
+
 async def cerca(event):
     sender = (await event.get_sender()).username
     chat = await event.get_input_chat()
     prob = randint(1, 100)
-    oggettobonus = []
-    if prob <= 10:
+    if prob <= 3:
         bonus = True
-        oggettobonus = random.choice(usabili)
     else:
         bonus = False
     if sender in sonno:
@@ -188,13 +193,21 @@ async def cerca(event):
         if att_cerca:
             await bot.send_message(chat, "Devi aspettare ancora un po'")
         else:
-            oggetto = random.choice(oggetti)
-            text = sender + " ti guardi un po' intorno ed alla fine in un grosso baule trovi **{}**.".format(oggetto) \
-                            + ("\nStranamente hai trovato anche **{}**".format(oggettobonus) if bonus else "") \
-                            + "\nControlla il tuo zaino con /zaino"
+            loot, rarity, bonusloot = await pickloot()
+            print(rarity)
+            if rarity == "[S]":
+                text = sender + " stai lavorando tranquillamente alla tua scrivania quando con tua estrema sorpresa" \
+                                " vedi entrare dalla porta **{}**.".format(loot) \
+                                + ("\nStranamente decide di donarti **{}**".format(bonusloot) if bonus else "") \
+                                + "\nControlla il tuo zaino con /zaino"
+            else:
+                text = sender + " ti guardi un po' intorno ed alla fine in un grosso baule trovi **{}**.".format(
+                    loot) \
+                       + ("\nStranamente hai trovato anche **{}**".format(bonusloot) if bonus else "") \
+                       + "\nControlla il tuo zaino con /zaino"
             await bot.send_message(chat, text)
-            my_dict["Inventario"] += [oggetto] + ([oggettobonus] if bonus else [])
-            print(sender + ": " + str([oggetto, oggettobonus]))
+            my_dict["Inventario"] += [loot] + ([bonusloot] if bonus else [])
+            print(sender + ": " + str([loot, bonusloot]))
             my_dict["Stop"] = not att_cerca
             await writedict(uid, my_dict)
             await aspettacerca(uid)
@@ -216,7 +229,7 @@ async def zaino(event):
     inventario = my_dict["Inventario"]
     tot = len(set(inventario))
     sacca = "Possiedi (" + str(tot) + "):\n"
-    for x in rarity:
+    for x in raritylist:
         for item in inventario:
             if x in item:
                 if item not in sacca:
@@ -433,8 +446,7 @@ async def lancia(event):
                                     my_dict["Inventario"].remove(bullet)
                                     my_dict["Lancio"] = not att_lancio
                                     await writedict(uid, my_dict)
-                                    await freccetta(target, chat)
-                                    await aspettalancia(uid)
+                                    await freccetta(target, chat, uid)
                                     return
                                 else:
                                     idtarget = registrati[target]
@@ -446,7 +458,7 @@ async def lancia(event):
                                     await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!"
                                                            .format(bullet, target, danni))
                                     my_dict = await opendict(idtarget)
-                                    vita = my_dict["HP"]
+                                    vita = int(my_dict["HP"])
                                     my_dict["HP"] = vita - danni
                                     await writedict(idtarget, my_dict)
                                     await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha "
@@ -480,36 +492,41 @@ async def controllohp(target, event):
         if gruppo:
             await bot.send_message(chat, "{} cade al suolo senza sensi!".format(target))
         await asyncio.sleep(900)
-
-        print(infermeria)
-        my_dict = await opendict(idtarget)
-        my_dict["HP"] = 50
-        await writedict(idtarget, my_dict)
-        await bot.send_message(idtarget, "Ti sgranchisci le gambe ed esci dall'infermeria!")
-        if gruppo:
-            await bot.send_message(chat, "{} è di nuovo in piena forma!".format(target))
+        if target in infermeria:
+            print(infermeria)
+            my_dict = await opendict(idtarget)
+            my_dict["HP"] = 50
+            await writedict(idtarget, my_dict)
+            await bot.send_message(idtarget, "Ti sgranchisci le gambe ed esci dall'infermeria!")
+            if gruppo:
+                await bot.send_message(chat, "{} è di nuovo in piena forma!".format(target))
 
 
 async def aspettalancia(uid):
+    print("Inizo atetsa lancio", uid)
     await asyncio.sleep(45)
     my_dict = await opendict(uid)
     att_lancio = my_dict["Lancio"]
+    print("Attesa lancio pre", att_lancio, uid)
     my_dict["Lancio"] = not att_lancio
+    print("Attesa lancio post",my_dict["Lancio"], uid)
     await writedict(uid, my_dict)
     await bot.send_message(uid, "Puoi lanciare un altro oggetto!")
 
 
-async def freccetta(target, chat):
+async def freccetta(target, chat, uid):
     sonno.append(target)
     print(sonno)
     await bot.send_message(target, "Sei stato colpito da una freccetta tranquillante "
                                    "e sei caduto in un sonno profondo!")
     await bot.send_message(chat, "Hai colpito {}, lo vedi cadere al suolo "
                                  "addormentato!".format(target))
-    await asyncio.sleep(300)
-    sonno.remove(target)
-    print(sonno)
-    await bot.send_message(target, "Abbastanza intontito, finalmente riesci a risprire gli occhi!")
+    await aspettalancia(uid)
+    await asyncio.sleep(255)
+    if target in sonno:
+        sonno.remove(target)
+        print(sonno)
+        await bot.send_message(target, "Abbastanza intontito, finalmente riesci a risprire gli occhi!")
 
 
 async def furto(event):
@@ -542,6 +559,7 @@ async def furto(event):
                 await bot.send_message(ladro, "Sei in infermeria, non è il caso di tentare un furto!")
             else:
                 prob = randint(1, 10)
+                print(prob)
                 if not sacca:
                     await bot.send_message(ladro, "Ti è anadata male, la tua vittima ha lo zaino vuoto!")
                 else:
@@ -552,19 +570,21 @@ async def furto(event):
                     my_dict = await opendict(uid)
                     my_dict["Inventario"] += [refurtiva]
                     await writedict(uid, my_dict)
-                    if prob <= 5:
+                    if prob >= 5 and vittima not in sonno:
                         rapina = not rapina
-                        print(ladro + " " + vittima + " " + refurtiva + " Ha lasciato tracce..." + " rapina impostato su"
-                              + str(rapina))
+                        print(ladro, vittima, refurtiva, "Ha lasciato tracce...", "rapina impostato su", str(rapina))
                         await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro "
                                                       "di te!".format(refurtiva, vittima))
                         await bot.send_message(vittima, "Senti lo zaino stranamente leggero e dopo pochi istanti ti "
                                                         "accorgi che effettivamente ti manca {}".format(refurtiva),
                                                buttons=[Button.inline('Indaga 🔍', b'indaga')])
                     else:
-                        print(ladro + " " + vittima + " " + refurtiva + " Non ha lasciato tracce...")
+                        print(ladro, vittima, refurtiva, "Non ha lasciato tracce...")
                         await bot.send_message(ladro, "Hai rubato {} a {} e te la sei svignata "
                                                       "agevolmente!".format(refurtiva, vittima))
+                        sonno.remove(vittima)
+                        await bot.send_message(vittima, "Dei rumori sospetti ti hanno svegliato, "
+                                                        "ma non noti nulla di strano...")
 
 
 async def useitem(event):
@@ -623,7 +643,8 @@ async def useitem(event):
                                         my_dict["HP"] = 50
                                     my_dict["Inventario"].remove(usable)
                                     await writedict(uid, my_dict)
-                                    await bot.send_message(chat, "Ti sei curato di {} HP, adesso hai {} HP!".format(cura, my_dict["HP"]))
+                                    await bot.send_message(chat, "Ti sei curato di {} HP, adesso hai {} "
+                                                                 "HP!".format(cura, my_dict["HP"]))
                                     return
 
 
@@ -648,6 +669,13 @@ with bot:
                 await giveitem(event)
             elif 'hello' in event.raw_text:
                 await event.reply('hi!')
+            elif '#VARINFO' in event.raw_text:
+                stringa = 'Infermeria: ' + str(infermeria) + '\n'
+                stringa += 'Sonno: ' + str(sonno) + '\n'
+                stringa += 'Rapina: ' + str(rapina) + '\n'
+                stringa += 'Ladro: ' + str(ladro) + '\n'
+                stringa += 'Refurtiva: ' + str(refurtiva) + '\n'
+                await bot.send_message(sender, stringa)
         if '/start' in event.raw_text:
             await start(event)
         elif '/sesso' in event.raw_text:
