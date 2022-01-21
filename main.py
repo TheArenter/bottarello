@@ -37,7 +37,7 @@ bullets = ["un sasso [C]", "una scarpa [C]", "una matita [C]", "una cernia [R]",
            "una freccetta tranquillante [S]", "un'onda energetica [Admin]", "una forchetta [C]",
            "un controller wireless PS Cinque [R]"]
 
-raritylist = ["[S]", "[L]", "[E]", "[R]", "[NC]", "[C]"]
+raritylist = ["[Admin]", "[S]", "[L]", "[E]", "[R]", "[NC]", "[C]"]
 
 
 async def main():
@@ -179,7 +179,7 @@ async def anni(event):
 
 
 async def pickloot():
-    rarity = random.choices(raritylist, weights=(2.5, 5, 7.5, 15, 25, 45), k=1)[0]
+    rarity = random.choices(raritylist, weights=(0, 2.5, 5, 7.5, 15, 25, 45), k=1)[0]
     loot = random.choice([item for item in oggetti if str(rarity) in item])
     bonusloot = random.choice(usabili)
     return loot, rarity, bonusloot
@@ -236,9 +236,6 @@ async def zaino(event):
     my_dict = await opendict(uid)
     inventario = my_dict["Inventario"]
     tot = len(set(inventario))
-    if sender in owner:
-        raritylist.append('Admin')
-        print(raritylist)
     sacca = "Possiedi (" + str(tot) + "):\n"
     for x in raritylist:
         for item in inventario:
@@ -246,7 +243,6 @@ async def zaino(event):
                 if item not in sacca:
                     sacca += item + " x " + str(inventario.count(item)) + "\n"
     await bot.send_message(chat, sacca)
-    raritylist.remove('Admin')
 
 
 async def additem(event):
@@ -708,7 +704,9 @@ async def edititem(event):
                     if arg in item:
                         my_dict["Inventario"][idx] = new
                         await writedict(value, my_dict)
-        print("Hai modificato le occorrenze di " + arg + " in " + new)
+        text = "Hai modificato le occorrenze di " + arg + " in " + new
+        print(text)
+        await bot.send_message(chat, text)
 
 
 async def invitems(event):
