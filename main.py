@@ -14,7 +14,7 @@ api_hash = os.environ['API_HASH']
 api_id = os.environ['API_ID']
 owner = os.environ['OWNER']
 
-bot = TelegramClient('bot', api_id, api_hash).start(bot_token=bot_token)
+bot = TelegramClient('bot', int(api_id), api_hash).start(bot_token=bot_token)
 
 lastmessage = ""
 
@@ -30,7 +30,7 @@ ladro = []
 refurtiva = []
 rapina = False
 
-usabili = ["una pozione rossa [R] [usabile]"]  #  , "qualche goccia d'acqua [C] [usabile]", "un raggio di sole [C] [usabile]"]
+usabili = ["una pozione rossa [R] [usabile]", "qualche goccia d'acqua [C] [usabile]", "un raggio di sole [C] [usabile]"]
 
 bullets = ["un sasso [C]", "una scarpa [C]", "una matita [C]", "una cernia [R]", "un dildo glitterato [E]",
            "una mela [C]", "una zucchina ambigua [NC]", "un telecomando [C]", "un cartone di Tavernello [C]",
@@ -179,10 +179,12 @@ async def anni(event):
 
 
 async def pickloot():
-    rarity = random.choices(raritylist, weights=(0, 2.5, 5, 7.5, 15, 25, 45), k=1)[0]
-    loot = random.choice([item for item in oggetti if str(rarity) in item])
-    bonusloot = random.choice(usabili)
-    return loot, rarity, bonusloot
+    # TODO spostare pesi in stringa esterna
+    rarity = random.choices(raritylist, weights=(0, 2.5, 5, 7.5, 15, 25, 45), k=2)
+    loot = random.choice([item for item in oggetti if str(rarity[0]) in item and 'usabile' not in item])
+    adloot = random.choice([item for item in oggetti if str(rarity[1]) in item and 'usabile' not in item])
+    bonusloot = random.choice([item for item in oggetti if 'usabile' in item])
+    return loot, rarity, bonusloot, adloot
 
 
 async def cerca(event):
@@ -191,6 +193,7 @@ async def cerca(event):
     bonus = False
     if randint(1, 100) <= 5:
         bonus = True
+    print(bonus)
     if sender in sonno:
         await bot.send_message(chat, "Stai dormendo profonfamente e non riesci a svegliarti!")
     else:
@@ -200,7 +203,7 @@ async def cerca(event):
         if att_cerca:
             await bot.send_message(chat, "Devi aspettare ancora un po'...")
         else:
-            loot, rarity, bonusloot = await pickloot()
+            loot, rarity, bonusloot, adloot = await pickloot()
             if rarity == "[S]":
                 text = sender + " stai lavorando tranquillamente alla tua scrivania quando con tua estrema sorpresa" \
                                 " vedi entrare dalla porta **{}**.".format(loot) \
@@ -675,6 +678,8 @@ async def usehandler(event):
                 return
         elif "goccia" in check:
             await event.edit("Non si sa ancora a cosa possa servire questo oggetto!")
+        elif "raggio" in check:
+            await event.edit("Non si sa ancora a cosa possa servire questo oggetto!")
 
 
 async def edititem(event):
@@ -774,12 +779,12 @@ with bot:
         else:
             await bot.send_message(sender, "Prima di poter usare qualunque comando ti devi registrare con /start")
 #        Comando di test per varie funzioni
-        if '/test' in event.raw_text:
-            await test(event)
+#        if '/test' in event.raw_text:
 #            chat = await event.get_input_chat()
 #            text = "***"
 #            await bot.send_message(chat, text, buttons=[[Button.inline(text='una pozione rossa [C]', data=b'risp1')],
 #                                                        [Button.inline(text='Pipì', data=b'risp2')]])
+#            await bot.send_message(chat, text)
 
 
 if __name__ == '__main__':
