@@ -215,9 +215,16 @@ async def cerca(event):
                                 " appartine.".format(loot) \
                        + ("\nStranamente hai trovato anche **{}**".format(bonusloot) if bonus else "") \
                        + "\n\nControlla il tuo zaino con /zaino"
+                y = random.choice([loot, adloot])
+                textalt = sender + " , anche se il capo non vuole, stai scavando nell'armadio degli oggetti smarriti" \
+                                " quando trovi **{}** e **{}**, potendone prendere solo uno ci pensi su qualche secondo" \
+                                   " e decidi che **{}** è la scelta migliore.".format(loot, adloot, y) \
+                       + ("\nStranamente hai trovato anche **{}**".format(bonusloot) if bonus else "") \
+                       + "\n\nControlla il tuo zaino con /zaino"
+            text = random.choice([text, textalt])
             await bot.send_message(chat, text)
-            my_dict["Inventario"] += [loot] + ([bonusloot] if bonus else [])
-            print(sender, "trova", loot, " - Bonus:", bonusloot if bonus else bonus)
+            my_dict["Inventario"] += [y] + ([bonusloot] if bonus else [])
+            print(sender, "trova", y, " - Bonus:", bonusloot if bonus else bonus)
             my_dict["Stop"] = not att_cerca
             await writedict(uid, my_dict)
             await aspettacerca(uid)
