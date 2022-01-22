@@ -120,7 +120,8 @@ async def scindaga(event):
         ladrohp = my_dict["HP"]
         my_dict["HP"] = ladrohp - 10
         await writedict(idladro, my_dict)
-        await event.edit('Hai scoperto il ladro, il tuo oggetto è perso, ma gli hai dato una bella lezione')
+        await event.edit('Le tracce ti hanno portato fino a {}, il tuo oggetto è perso,'
+                         ' ma gli hai dato una bella lezione!'.format(ladro))
         await bot.send_message(idladro, 'Sei stato scoperto! Ti hanno dato una bella lezione ed hai perso 10 HP!')
         rapina = not rapina
         print(rapina)
@@ -179,8 +180,8 @@ async def anni(event):
 
 
 async def pickloot():
-    # TODO spostare pesi in stringa esterna
-    rarity = random.choices(raritylist, weights=(0, 2.5, 5, 7.5, 15, 25, 45), k=2)
+    base = (0, 2.5, 5, 7.5, 15, 25, 45)
+    rarity = random.choices(raritylist, weights=base, k=2)
     loot = random.choice([item for item in oggetti if str(rarity[0]) in item and 'usabile' not in item])
     adloot = random.choice([item for item in oggetti if str(rarity[1]) in item and 'usabile' not in item])
     bonusloot = random.choice([item for item in oggetti if 'usabile' in item])
@@ -191,38 +192,39 @@ async def cerca(event):
     sender = (await event.get_sender()).username
     chat = await event.get_input_chat()
     bonus = False
+    uid = (await event.get_sender()).id
     if randint(1, 100) <= 5:
         bonus = True
     print(bonus)
     if sender in sonno:
-        await bot.send_message(chat, "Stai dormendo profonfamente e non riesci a svegliarti!")
+        await bot.send_message(uid, "Stai dormendo profonfamente e non riesci a svegliarti!")
     else:
-        uid = (await event.get_sender()).id
         my_dict = await opendict(uid)
         att_cerca = my_dict["Stop"]
         if att_cerca:
             await bot.send_message(chat, "Devi aspettare ancora un po'...")
         else:
             loot, rarity, bonusloot, adloot = await pickloot()
-            if rarity == "[S]":
+            y = random.choice([loot, adloot])
+            print(y)
+            if "[S]" in y:
                 text = sender + " stai lavorando tranquillamente alla tua scrivania quando con tua estrema sorpresa" \
-                                " vedi entrare dalla porta **{}**.".format(loot) \
+                                " vedi entrare dalla porta **{}**.".format(y) \
                                 + ("\nStranamente decide di donarti **{}**".format(bonusloot) if bonus else "") \
                                 + "\nControlla il tuo zaino con /zaino"
             else:
                 text = sender + " , anche se il capo non vuole, stai scavando nell'armadio degli oggetti smarriti" \
                                 " quando trovi **{}** e senza fare troppi complimenti decidi che adesso ti" \
-                                " appartine.".format(loot) \
+                                " appartine.".format(y) \
                        + ("\nStranamente hai trovato anche **{}**".format(bonusloot) if bonus else "") \
                        + "\n\nControlla il tuo zaino con /zaino"
-                y = random.choice([loot, adloot])
-                textalt = sender + " , anche se il capo non vuole, stai scavando nell'armadio degli oggetti smarriti" \
-                                " quando trovi **{}** e **{}**, potendone prendere solo uno ci pensi su qualche secondo" \
-                                   " e decidi che **{}** è la scelta migliore.".format(loot, adloot, y) \
+                textalter = sender + " , anche se il capo non vuole, stai scavando nell'armadio degli oggetti smarriti" \
+                                   " quando trovi **{}** e **{}**, potendone prendere solo uno ci pensi su qualche" \
+                                   " secondo e decidi che **{}** è la scelta migliore.".format(loot, adloot, y) \
                        + ("\nStranamente hai trovato anche **{}**".format(bonusloot) if bonus else "") \
                        + "\n\nControlla il tuo zaino con /zaino"
-            text = random.choice([text, textalt])
-            await bot.send_message(chat, text)
+            chtext = random.choice([text, textalter])
+            await bot.send_message(uid, chtext)
             my_dict["Inventario"] += [y] + ([bonusloot] if bonus else [])
             print(sender, "trova", y, " - Bonus:", bonusloot if bonus else bonus)
             my_dict["Stop"] = not att_cerca
@@ -604,7 +606,7 @@ async def furto(event):
                 if not sacca:
                     await bot.send_message(ladro, "Ti è anadata male, la tua vittima ha lo zaino vuoto!")
                 else:
-                    refurtiva = random.choice(sacca)
+                    refurtiva = random.choice([matchx for matchx in sacca if '[Admin]' not in matchx])
                     print(refurtiva)
                     my_dict["Inventario"].remove(refurtiva)
                     await writedict(idtarget, my_dict)
@@ -625,7 +627,7 @@ async def furto(event):
                                                       "agevolmente!".format(refurtiva, vittima))
                         if vittima in sonno:
                             sonno.remove(vittima)
-                        await bot.send_message(vittima, "Dei rumori sospetti ti hanno svegliato, "
+                            await bot.send_message(vittima, "Dei rumori sospetti ti hanno svegliato, "
                                                         "ma non noti nulla di strano...")
 
 
@@ -741,47 +743,47 @@ with bot:
         #  lastmessage = event.raw_text
         sender = (await event.get_sender()).username
         if sender == owner:
-            if '/additem' in event.raw_text:
+            if event.raw_text.startswith("/additem"):
                 await additem(event)
-            elif '/giveitem' in event.raw_text:
+            elif event.raw_text.startswith("/giveitem"):
                 await giveitem(event)
-            elif '/edititem' in event.raw_text:
+            elif event.raw_text.startswith("/edititem"):
                 await edititem(event)
             elif 'hello' in event.raw_text:
                 await event.reply('hi!')
-            elif '#VARINFO' in event.raw_text:
+            elif event.raw_text.startswith("#VARINFO"):
                 stringa = 'Infermeria: ' + str(infermeria) + '\n'
                 stringa += 'Sonno: ' + str(sonno) + '\n'
                 stringa += 'Rapina: ' + str(rapina) + '\n'
                 stringa += 'Ladro: ' + str(ladro) + '\n'
                 stringa += 'Refurtiva: ' + str(refurtiva) + '\n'
                 await bot.send_message(sender, stringa)
-            elif '/inv_items' in event.raw_text:
+            elif event.raw_text.startswith("/inv_items"):
                 await invitems(event)
-        if '/start' in event.raw_text or '/via' in event.raw_text:
+        if event.raw_text.startswith("/start") or event.raw_text.startswith("/via"):
             await start(event)
         elif sender in registrati:
-            if '/sesso' in event.raw_text:
+            if event.raw_text.startswith("/sesso"):
                 await sesso(event)
-            elif '/scheda' in event.raw_text:
+            elif event.raw_text.startswith("/scheda"):
                 await scheda(event)
-            elif '/anni' in event.raw_text:
+            elif event.raw_text.startswith("/anni"):
                 await anni(event)
-            elif '/cerca' in event.raw_text:
+            elif event.raw_text.startswith("/cerca"):
                 await cerca(event)
-            elif '/zaino' in event.raw_text:
+            elif event.raw_text.startswith("/zaino"):
                 await zaino(event)
-            elif '/oggetto' in event.raw_text:
+            elif event.raw_text.startswith("/oggetto"):
                 await cercaoggetto(event)
-            elif '/oggetti' in event.raw_text:
+            elif event.raw_text.startswith("/oggetti"):
                 await totoggetti(event)
-            elif '/dai' in event.raw_text:
+            elif event.raw_text.startswith("/dai"):
                 await daioggetto(event)
-            elif '/lancia' in event.raw_text:
+            elif event.raw_text.startswith("/lancia"):
                 await lancia(event)
-            elif '/ruba' in event.raw_text:
+            elif event.raw_text.startswith("/ruba"):
                 await furto(event)
-            elif '/usa' in event.raw_text:
+            elif event.raw_text.startswith("/usa"):
                 await useitem(event)
         else:
             await bot.send_message(sender, "Prima di poter usare qualunque comando ti devi registrare con /start")
@@ -790,7 +792,7 @@ with bot:
 #            chat = await event.get_input_chat()
 #            text = "***"
 #            await bot.send_message(chat, text, buttons=[[Button.inline(text='una pozione rossa [C]', data=b'risp1')],
-#                                                        [Button.inline(text='Pipì', data=b'risp2')]])
+#                                                       [Button.inline(text='Pipì', data=b'risp2')]])
 #            await bot.send_message(chat, text)
 
 
