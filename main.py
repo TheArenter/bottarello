@@ -219,8 +219,8 @@ async def cerca(event):
                        + ("\nStranamente hai trovato anche **{}**".format(bonusloot) if bonus else "") \
                        + "\n\nControlla il tuo zaino con /zaino"
                 textalter = sender + " , anche se il capo non vuole, stai scavando nell'armadio degli oggetti smarriti" \
-                                   " quando trovi **{}** e **{}**, potendone prendere solo uno ci pensi su qualche" \
-                                   " secondo e decidi che **{}** è la scelta migliore.".format(loot, adloot, y) \
+                                     " quando trovi **{}** e **{}**, potendone prendere solo uno ci pensi su qualche" \
+                                     " secondo e decidi che **{}** è la scelta migliore.".format(loot, adloot, y) \
                        + ("\nStranamente hai trovato anche **{}**".format(bonusloot) if bonus else "") \
                        + "\n\nControlla il tuo zaino con /zaino"
             chtext = random.choice([text, textalter])
