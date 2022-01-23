@@ -189,6 +189,7 @@ async def pickloot():
 
 
 async def cerca(event):
+    textalter = None
     sender = (await event.get_sender()).username
     chat = await event.get_input_chat()
     bonus = False
@@ -212,6 +213,7 @@ async def cerca(event):
                                 " vedi entrare dalla porta **{}**.".format(y) \
                                 + ("\nStranamente decide di donarti **{}**".format(bonusloot) if bonus else "") \
                                 + "\nControlla il tuo zaino con /zaino"
+                await bot.send_message(uid, text)
             else:
                 text = sender + " , anche se il capo non vuole, stai scavando nell'armadio degli oggetti smarriti" \
                                 " quando trovi **{}** e senza fare troppi complimenti decidi che adesso ti" \
