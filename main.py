@@ -619,11 +619,6 @@ async def usehandler(event):
         if "Annulla" in check:
             await event.edit('Operazione annullata!')
             return
-        databullet = check.split("_")[1]
-        bullet = [matchx for matchx in bullets if databullet in matchx][0]
-        target = check.split("_")[2]
-        idtarget = registrati[target]
-        print(bullet, target)
         if "pozione" in check:
             x = "una pozione rossa [R] [usabile]"
             my_dict = await opendict(uid)
@@ -646,7 +641,12 @@ async def usehandler(event):
             await event.edit("Non si sa ancora a cosa possa servire questo oggetto!")
         elif "raggio" in check:
             await event.edit("Non si sa ancora a cosa possa servire questo oggetto!")
-        elif "freccetta" in check:
+        databullet = check.split("_")[1]
+        bullet = [matchx for matchx in bullets if databullet in matchx][0]
+        target = check.split("_")[2]
+        idtarget = registrati[target]
+        print(bullet, target)
+        if "freccetta" in check:
             print(sonno)
             my_dict = await opendict(uid)
             my_dict["Inventario"].remove(bullet)
@@ -783,7 +783,10 @@ with bot:
             elif event.raw_text.startswith("/usa"):
                 await useitem(event)
         else:
-            await bot.send_message(sender, "Prima di poter usare qualunque comando ti devi registrare con /start")
+            if event.is_group:
+                return
+            else:
+                await bot.send_message(sender, "Prima di poter usare qualunque comando ti devi registrare con /start")
 #        Comando di test per varie funzioni
 #        if '/test' in event.raw_text:
 #            await lancia(event)
