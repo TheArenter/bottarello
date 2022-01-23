@@ -110,7 +110,7 @@ async def scindaga(event):
         print("Safe...")
         await event.edit('Purtroppo gli indizi non ti hanno portato a nulla!')
         ladro = []
-        rapina = not rapina
+        rapina = False
         print(rapina)
     else:
         print("Caught...")
@@ -123,7 +123,7 @@ async def scindaga(event):
         await event.edit('Le tracce ti hanno portato fino a {}, il tuo oggetto è perso,'
                          ' ma gli hai dato una bella lezione!'.format(ladro))
         await bot.send_message(idladro, 'Sei stato scoperto! Ti hanno dato una bella lezione ed hai perso 10 HP!')
-        rapina = not rapina
+        rapina = False
         print(rapina)
         await controllohp(ladro, event)
         ladro = []
@@ -189,7 +189,6 @@ async def pickloot():
 
 
 async def cerca(event):
-    textalter = None
     sender = (await event.get_sender()).username
     chat = await event.get_input_chat()
     bonus = False
@@ -473,7 +472,7 @@ async def lancia(event):
                                     print(sonno)
                                     my_dict = await opendict(uid)
                                     my_dict["Inventario"].remove(bullet)
-                                    my_dict["Lancio"] = not att_lancio
+                                    my_dict["Lancio"] = True
                                     await writedict(uid, my_dict)
                                     await freccetta(target, chat, uid)
                                     return
@@ -496,7 +495,7 @@ async def lancia(event):
                                     danni = randint(1, 6)
                                     my_dict = await opendict(uid)
                                     my_dict["Inventario"].remove(bullet)
-                                    my_dict["Lancio"] = not att_lancio
+                                    my_dict["Lancio"] = True
                                     await writedict(uid, my_dict)
                                     await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!"
                                                            .format(bullet, target, danni))
@@ -552,7 +551,7 @@ async def aspettalancia(uid):
     my_dict = await opendict(uid)
     att_lancio = my_dict["Lancio"]
     print("Attesa lancio pre", att_lancio, uid)
-    my_dict["Lancio"] = not att_lancio
+    my_dict["Lancio"] = False
     print("Attesa lancio post", my_dict["Lancio"], uid)
     await writedict(uid, my_dict)
     await bot.send_message(uid, "Puoi lanciare un altro oggetto!")
@@ -615,7 +614,7 @@ async def furto(event):
                     my_dict["Inventario"] += [refurtiva]
                     await writedict(uid, my_dict)
                     if prob >= 5 and vittima not in sonno:
-                        rapina = not rapina
+                        rapina = True
                         print(ladro, vittima, refurtiva, "Ha lasciato tracce...", "rapina impostato su", str(rapina))
                         await bot.send_message(ladro, "Hai rubato {} a {} ma hai lasciato delle tracce dietro "
                                                       "di te!".format(refurtiva, vittima))
@@ -789,14 +788,12 @@ with bot:
         else:
             await bot.send_message(sender, "Prima di poter usare qualunque comando ti devi registrare con /start")
 #        Comando di test per varie funzioni
-        if '/test' in event.raw_text:
-            chat = await event.get_input_chat()
-            text = "Senti, sono di fretta\nAvrei in mente una storia bellissima, ma adesso non ho tempo e voglia di" \
-                   " raccontarla. Prendi **una lampadina multlore [E]** e tanti saluti! Cia'.\n\n" \
-                   "(15 minuti, Psicologia, 56)"
+#        if '/test' in event.raw_text:
+#            chat = await event.get_input_chat()
+#            text = "Hai rotto il cazzo"
 #            await bot.send_message(chat, text, buttons=[[Button.inline(text='una pozione rossa [C]', data=b'risp1')],
 #                                                       [Button.inline(text='Pipì', data=b'risp2')]])
-            await bot.send_message(chat, text)
+#            await bot.send_message(chat, text)
 
 
 if __name__ == '__main__':
