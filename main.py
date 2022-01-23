@@ -222,8 +222,8 @@ async def cerca(event):
                 textalter = sender + " , anche se il capo non vuole, stai scavando nell'armadio degli oggetti smarriti" \
                                      " quando trovi **{}** e **{}**, potendone prendere solo uno ci pensi su qualche" \
                                      " secondo e decidi che **{}** è la scelta migliore.".format(loot, adloot, y) \
-                       + ("\nStranamente hai trovato anche **{}**".format(bonusloot) if bonus else "") \
-                       + "\n\nControlla il tuo zaino con /zaino"
+                                   + ("\nStranamente hai trovato anche **{}**".format(bonusloot) if bonus else "") \
+                                   + "\n\nControlla il tuo zaino con /zaino"
                 chtext = random.choice([text, textalter])
                 await bot.send_message(uid, chtext)
             my_dict["Inventario"] += [y] + ([bonusloot] if bonus else [])
@@ -434,10 +434,10 @@ async def lancia(event):
                 await event.reply("Non hai un bell'aspetto, aspetta di riprenderti un po' prima di lanciare oggetti!")
             else:
                 await bot.send_message(uid, "Non hai un bell'aspetto, aspetta di riprenderti un po' prima di"
-                                             " lanciare oggetti!")
+                                            " lanciare oggetti!")
         else:
             if len(parts) != 2:
-                await bot.send_message(chat, "Per lanciare un oggeto usa /lancia <Giocaotre> <Oggetto>")
+                await bot.send_message(chat, "Per lanciare un oggeto usa /lancia <Giocaotre>")
             else:
                 target = parts[1]
                 if target not in registrati:
@@ -582,7 +582,7 @@ async def furto(event):
                         if vittima in sonno:
                             sonno.remove(vittima)
                             await bot.send_message(vittima, "Dei rumori sospetti ti hanno svegliato, "
-                                                        "ma non noti nulla di strano...")
+                                                            "ma non noti nulla di strano...")
 
 
 async def useitem(event):
