@@ -413,12 +413,15 @@ async def giveitem(event):
 
 async def lancia(event):
     uid = (await event.get_sender()).id
-    chat = await event.get_input_chat()
     sender = (await event.get_sender()).username
+    my_dict = await opendict(uid)
+    if event.is_group:
+        chat = (await event.get_input_chat()).peer_id
+    else:
+        chat = uid
     if sender in sonno:
         await bot.send_message(chat, "Stai dormendo profonfamente e non riesci a svegliarti!")
     else:
-        my_dict = await opendict(uid)
         att_lancio = my_dict["Lancio"]
         parts = event.raw_text.split(" ", 2)
         if att_lancio:
@@ -430,15 +433,13 @@ async def lancia(event):
             if event.is_group:
                 await event.reply("Non hai un bell'aspetto, aspetta di riprenderti un po' prima di lanciare oggetti!")
             else:
-                await bot.send_message(chat, "Non hai un bell'aspetto, aspetta di riprenderti un po' prima di"
+                await bot.send_message(uid, "Non hai un bell'aspetto, aspetta di riprenderti un po' prima di"
                                              " lanciare oggetti!")
         else:
-            if len(parts) != 3:
+            if len(parts) != 2:
                 await bot.send_message(chat, "Per lanciare un oggeto usa /lancia <Giocaotre> <Oggetto>")
             else:
                 target = parts[1]
-                idtarget = registrati[target]
-                ammo = parts[2].lower()
                 if target not in registrati:
                     await bot.send_message(chat, "Lanciare oggetti è pericoloso,"
                                                  " scrivi per bene il nome di chi vuoi colpire!")
@@ -446,74 +447,27 @@ async def lancia(event):
                     await bot.send_message(chat, "{} non sembra avere un bell'aspetto, lasciamo che "
                                                  "riposi!".format(target))
                 else:
-                    my_dict = await opendict(uid)
-                    inventario = my_dict["Inventario"]
-                    bullet = [matchx for matchx in inventario if ammo in matchx.lower()]
-                    if not bullet:
-                        if event.is_group:
-                            await event.reply("Non possiedi questo oggetto!")
-                        else:
-                            await bot.send_message(chat, "Non possiedi questo oggetto!")
-                    else:
-                        if len(set(bullet)) > 1:
-                            if event.is_group:
-                                await event.reply("Troppi oggetti con quel nome!")
-                            else:
-                                await bot.send_message(chat, "Troppi oggetti con quel nome!")
-                        else:
-                            bullet = bullet[0]
-                            if bullet not in bullets:
-                                if event.is_group:
-                                    await event.reply("Questo non lo puoi lanciare!")
-                                else:
-                                    await bot.send_message(chat, "Questo non lo puoi lanciare!")
-                            else:
-                                if bullet == "una freccetta tranquillante [S]":
-                                    print(sonno)
-                                    my_dict = await opendict(uid)
-                                    my_dict["Inventario"].remove(bullet)
-                                    my_dict["Lancio"] = True
-                                    await writedict(uid, my_dict)
-                                    await freccetta(target, chat, uid)
-                                    return
-                                elif bullet == "un'onda energetica [Admin]":
-                                    my_dict = await opendict(idtarget)
-                                    vita = int(my_dict["HP"])
-                                    danni = vita
-                                    my_dict["HP"] = vita - danni
-                                    await writedict(idtarget, my_dict)
-                                    await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!"
-                                                           .format(bullet, target, danni))
-                                    await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha "
-                                                                     "tolto {} HP!".format(sender, bullet, danni))
-                                    if event.is_group:
-                                        await bot.send_message(chat, "{} ha lanciato {} a {} e gli ha "
-                                                                     "tolto {} HP!".format(sender, bullet, target,
-                                                                                           danni))
-                                    await controllohp(target, event)
-                                else:
-                                    danni = randint(1, 6)
-                                    my_dict = await opendict(uid)
-                                    my_dict["Inventario"].remove(bullet)
-                                    my_dict["Lancio"] = True
-                                    await writedict(uid, my_dict)
-                                    await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!"
-                                                           .format(bullet, target, danni))
-                                    my_dict = await opendict(idtarget)
-                                    vita = int(my_dict["HP"])
-                                    my_dict["HP"] = vita - danni
-                                    await writedict(idtarget, my_dict)
-                                    await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha "
-                                                                     "tolto {} HP!".format(sender, bullet, danni))
-                                    if event.is_group:
-                                        await bot.send_message(chat, "{} ha lanciato {} a {} e gli ha "
-                                                                     "tolto {} HP!".format(sender, bullet, target,
-                                                                                           danni))
-                                    if target in sonno:
-                                        sonno.remove(target)
-                                        await bot.send_message(target, "Il colpo ti ha svegliato!")
-                                    await controllohp(target, event)
-                                    await aspettalancia(uid)
+                    inventory = my_dict["Inventario"]
+                    quiver = []
+                    subquiver = []
+                    for item in inventory:
+                        if item in bullets:
+                            quiver += [item + " (" + str(inventory.count(item)) + ")"]
+                            for x in quiver:
+                                if x not in subquiver:
+                                    subquiver.append(x)
+                    print(quiver)
+                    print(subquiver)
+                    keyboard = []
+                    for item in subquiver:
+                        data = str(uid) + "_" + item.split(" ")[1] + "_" + target
+                        newdata = data.encode("ascii")
+                        keyboard += [[Button.inline("1x " + item, newdata)]]
+                    data = str(uid) + "Annulla"
+                    newdata = data.encode("ascii")
+                    keyboard += [[Button.inline("Annulla", newdata)]]
+                    text = "Quale oggetto vuoi lanciare a {}?".format(target)
+                    await bot.send_message(chat, text, buttons=keyboard)
 
 
 async def controllohp(target, event):
@@ -664,6 +618,14 @@ async def useitem(event):
 async def usehandler(event):
     uid = (await event.get_sender()).id
     check = event.data.decode("ascii")
+    databullet = check.split("_")[1]
+    bullet = [matchx for matchx in bullets if databullet in matchx][0]
+    print(bullet)
+    target = check.split("_")[2]
+    sender = (await event.get_sender()).username
+    chat = await event.get_input_chat()
+    idtarget = registrati[target]
+    print(bullet, target)
     if str(uid) in check:
         if "Annulla" in check:
             await event.edit('Operazione annullata!')
@@ -689,6 +651,52 @@ async def usehandler(event):
             await event.edit("Non si sa ancora a cosa possa servire questo oggetto!")
         elif "raggio" in check:
             await event.edit("Non si sa ancora a cosa possa servire questo oggetto!")
+        elif "freccetta" in check:
+            print(sonno)
+            my_dict = await opendict(uid)
+            my_dict["Inventario"].remove(bullet)
+            my_dict["Lancio"] = True
+            await writedict(uid, my_dict)
+            await freccetta(target, chat, uid)
+            return
+        elif "onda" in check:
+            my_dict = await opendict(idtarget)
+            vita = int(my_dict["HP"])
+            danni = vita
+            my_dict["HP"] = vita - danni
+            await writedict(idtarget, my_dict)
+            await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!"
+                                   .format(bullet, target, danni))
+            await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha "
+                                             "tolto {} HP!".format(sender, bullet, danni))
+            if event.is_group:
+                await bot.send_message(chat, "{} ha lanciato {} a {} e gli ha "
+                                             "tolto {} HP!".format(sender, bullet, target,
+                                                                   danni))
+            await controllohp(target, event)
+        else:
+            danni = randint(1, 6)
+            my_dict = await opendict(uid)
+            my_dict["Inventario"].remove(bullet)
+            my_dict["Lancio"] = True
+            await writedict(uid, my_dict)
+            await bot.send_message(uid, "Hai lanciato {} a {} e gli hai tolto {} HP!"
+                                   .format(bullet, target, danni))
+            my_dict = await opendict(idtarget)
+            vita = int(my_dict["HP"])
+            my_dict["HP"] = vita - danni
+            await writedict(idtarget, my_dict)
+            await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha "
+                                             "tolto {} HP!".format(sender, bullet, danni))
+            if event.is_group:
+                await bot.send_message(chat, "{} ha lanciato {} a {} e gli ha "
+                                             "tolto {} HP!".format(sender, bullet, target,
+                                                                   danni))
+            if target in sonno:
+                sonno.remove(target)
+                await bot.send_message(target, "Il colpo ti ha svegliato!")
+            await controllohp(target, event)
+            await aspettalancia(uid)
 
 
 async def edititem(event):
@@ -789,6 +797,7 @@ with bot:
             await bot.send_message(sender, "Prima di poter usare qualunque comando ti devi registrare con /start")
 #        Comando di test per varie funzioni
 #        if '/test' in event.raw_text:
+#            await lancia(event)
 #            chat = await event.get_input_chat()
 #            text = "Hai rotto il cazzo"
 #            await bot.send_message(chat, text, buttons=[[Button.inline(text='una pozione rossa [C]', data=b'risp1')],
