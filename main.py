@@ -225,11 +225,11 @@ async def cerca(event):
                                      " secondo e decidi che **{}** è la scelta migliore.".format(loot, adloot, y) \
                        + ("\nStranamente hai trovato anche **{}**".format(bonusloot) if bonus else "") \
                        + "\n\nControlla il tuo zaino con /zaino"
-            chtext = random.choice([text, textalter])
-            await bot.send_message(uid, chtext)
+                chtext = random.choice([text, textalter])
+                await bot.send_message(uid, chtext)
             my_dict["Inventario"] += [y] + ([bonusloot] if bonus else [])
             print(sender, "trova", y, " - Bonus:", bonusloot if bonus else bonus)
-            my_dict["Stop"] = not att_cerca
+            my_dict["Stop"] = True
             await writedict(uid, my_dict)
             await aspettacerca(uid)
 
@@ -237,8 +237,7 @@ async def cerca(event):
 async def aspettacerca(uid):
     await asyncio.sleep(60)
     my_dict = await opendict(uid)
-    att_cerca = my_dict["Stop"]
-    my_dict["Stop"] = not att_cerca
+    my_dict["Stop"] = False
     await writedict(uid, my_dict)
     await bot.send_message(uid, "Puoi tornare a cercare!")
 
@@ -790,12 +789,14 @@ with bot:
         else:
             await bot.send_message(sender, "Prima di poter usare qualunque comando ti devi registrare con /start")
 #        Comando di test per varie funzioni
-#        if '/test' in event.raw_text:
-#            chat = await event.get_input_chat()
-#            text = "***"
+        if '/test' in event.raw_text:
+            chat = await event.get_input_chat()
+            text = "Senti, sono di fretta\nAvrei in mente una storia bellissima, ma adesso non ho tempo e voglia di" \
+                   " raccontarla. Prendi **una lampadina multlore [E]** e tanti saluti! Cia'.\n\n" \
+                   "(15 minuti, Psicologia, 56)"
 #            await bot.send_message(chat, text, buttons=[[Button.inline(text='una pozione rossa [C]', data=b'risp1')],
 #                                                       [Button.inline(text='Pipì', data=b'risp2')]])
-#            await bot.send_message(chat, text)
+            await bot.send_message(chat, text)
 
 
 if __name__ == '__main__':
