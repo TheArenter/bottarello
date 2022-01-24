@@ -26,16 +26,18 @@ with open('registered.json') as f:
 
 infermeria = []
 sonno = []
+cursed = []
 ladro = []
 refurtiva = []
 rapina = False
 
-usabili = ["una pozione rossa [R] [usabile]", "qualche goccia d'acqua [C] [usabile]", "un raggio di sole [C] [usabile]"]
+usabili = ["una pozione rossa [R] [usabile]", "qualche goccia d'acqua [C] [usabile]", "un raggio di sole [C] [usabile]",
+           "una piuma di fenice [L] [usabile]"]
 
 bullets = ["un sasso [C]", "una scarpa [C]", "una matita [C]", "una cernia [R]", "un dildo glitterato [E]",
            "una mela [C]", "una zucchina ambigua [NC]", "un telecomando [C]", "un cartone di Tavernello [C]",
            "una freccetta tranquillante [S]", "un'onda energetica [Admin]", "una forchetta [C]",
-           "un controller wireless PS Cinque [R]", "una banana [C]", "del salame [R]"]
+           "un controller wireless PS Cinque [R]", "una banana [C]", "del salame [R]", "un'antica urna polverosa [L]"]
 
 raritylist = ["[Admin]", "[S]", "[L]", "[E]", "[R]", "[NC]", "[C]"]
 
@@ -586,7 +588,29 @@ async def useitem(event):
     chat = await event.get_input_chat()
     uid = (await event.get_sender()).id
     if sender in infermeria or sender in sonno:
-        await bot.send_message(chat, "In questo momento non puoi usare oggetti!")
+        my_dict = await opendict(uid)
+        inventario = my_dict["Inventario"]
+        frominventory = [matchx for matchx in inventario if 'piuma' in matchx.lower()]
+        if frominventory:
+            container = []
+            subcontainer = []
+            for item in frominventory:
+                container += [item + " (" + str(frominventory.count(item)) + ")"]
+                for x in container:
+                    if x not in subcontainer:
+                        subcontainer += [x]
+            keyboard = []
+            for item in subcontainer:
+                data = str(uid) + item.split(" ")[1]
+                newdata = data.encode("ascii")
+                keyboard += [[Button.inline("1x " + item, newdata)]]
+            data = str(uid) + "Annulla"
+            newdata = data.encode("ascii")
+            keyboard += [[Button.inline("Annulla", newdata)]]
+            text = "Quale oggetto vuoi usare?"
+            await bot.send_message(chat, text, buttons=keyboard)
+        else:
+            await bot.send_message(chat, "In questo momento non puoi usare oggetti!")
     else:
         my_dict = await opendict(uid)
         inventario = my_dict["Inventario"]
@@ -637,6 +661,18 @@ async def usehandler(event):
                 await writedict(uid, my_dict)
                 await event.edit("Ti sei curato di {} HP, adesso hai {} HP!".format(cura, my_dict["HP"]))
                 return
+        elif "piuma" in check:
+            if sender not in infermeria:
+                await event.edit("Sei in buona salute, non ti connviene sprecare una piuma!")
+            else:
+                x = "una piuma di fenice [L] [usabile]"
+                my_dict = await opendict(uid)
+                my_dict["HP"] = 25
+                my_dict["Inventario"].remove(x)
+                await writedict(uid, my_dict)
+                await event.edit("Consumi la piuma e ti senti subito meglio!")
+                infermeria.remove(sender)
+                return
         elif "goccia" in check:
             await event.edit("Non si sa ancora a cosa possa servire questo oggetto!")
         elif "raggio" in check:
@@ -654,7 +690,7 @@ async def usehandler(event):
             await writedict(uid, my_dict)
             await freccetta(target, event, uid)
             return
-        elif "onda" in check:
+        elif "energetica" in check:
             my_dict = await opendict(idtarget)
             vita = int(my_dict["HP"])
             danni = vita
@@ -666,6 +702,22 @@ async def usehandler(event):
             if event.is_group:
                 await event.edit("{} ha lanciato {} a {} e gli ha tolto {} HP!".format(sender, bullet, target, danni))
             await controllohp(target, event)
+        elif "urna" in check:
+            my_dict = await opendict(uid)
+            my_dict["Inventario"].remove(bullet)
+            my_dict["Lancio"] = True
+            await writedict(uid, my_dict)
+            await event.edit("L'antica urna va in mille pezzi sui piedi di {}!".format(target))
+            await bot.send_message(idtarget, "L'antica urna lanciata da {} va in frantumi sui tuoi piedi e subito dopo"
+                                             " uno strano spettro con un cucchiaio in mano appare davanti"
+                                             " a te!".format(sender, bullet))
+            if event.is_group:
+                await event.edit("L'antica urna lanciata da {} va in mille pezzi sui"
+                                 " piedi di {}!".format(sender, target))
+            cursed.append(target)
+            await aspettalancia(uid)
+            await curse(event, target)
+            return
         else:
             danni = randint(1, 6)
             my_dict = await opendict(uid)
@@ -725,6 +777,39 @@ async def invitems(event):
     await bot.send_message(chat, text)
 
 
+async def curse(event, target):
+    chat = await event.get_input_chat()
+    targetid = registrati[target]
+    if target in infermeria:
+        await bot.send_message(chat, "Il tuo obbiettivo è già malconcio, lo spettro dopo qualche secondo "
+                                     "svanisce nel nulla!")
+        cursed.remove(target)
+        return
+    else:
+        my_dict = await opendict(targetid)
+        my_dict["HP"] -= 1
+        await writedict(targetid, my_dict)
+        await bot.send_message(targetid, "Lo strano spettro ti colpisce con il cucchiaio e ti leva 1 HP!")
+        if my_dict["HP"] == 0:
+            infermeria.append(target)
+            await bot.send_message(targetid, "Un ultimo colpo e vedi lo spettro svanire mentre crolli a terra!")
+            await asyncio.sleep(900)
+            if target in cursed:
+                cursed.remove(target)
+            if target in infermeria:
+                infermeria.remove(target)
+                print(infermeria, "uscita", target)
+                my_dict = await opendict(targetid)
+                my_dict["HP"] = 50
+                await writedict(targetid, my_dict)
+                await bot.send_message(targetid, "Ti sgranchisci le gambe ed esci dall'infermeria!")
+                if event.is_group:
+                    await bot.send_message(chat, "{} è di nuovo in piena forma!".format(target))
+        else:
+            await asyncio.sleep(300)
+            await curse(event, target)
+
+
 @bot.on(events.NewMessage(pattern=r'(?i).*heck'))
 async def handler(event):
     await event.delete()
@@ -751,6 +836,7 @@ with bot:
             elif event.raw_text.startswith("#VARINFO"):
                 stringa = 'Infermeria: ' + str(infermeria) + '\n'
                 stringa += 'Sonno: ' + str(sonno) + '\n'
+                stringa += 'Maledizione: ' + str(cursed) + '\n'
                 stringa += 'Rapina: ' + str(rapina) + '\n'
                 stringa += 'Ladro: ' + str(ladro) + '\n'
                 stringa += 'Refurtiva: ' + str(refurtiva) + '\n'
