@@ -248,8 +248,9 @@ async def zaino(event):
     uid = (await event.get_sender()).id
     my_dict = await opendict(uid)
     inventario = my_dict["Inventario"]
-    tot = len(set(inventario))
-    sacca = "Possiedi (" + str(tot) + "):\n"
+    tot = len(inventario)
+    totunici = len(set(inventario))
+    sacca = "Possiedi questi oggetti ( **" + str(totunici) + " unici** / **" + str(tot) + " totali** ):\n"
     for x in raritylist:
         for item in inventario:
             if x in item:
