@@ -2,6 +2,7 @@ from telethon import events, TelegramClient
 from telethon.tl.custom import Button
 from dotenv import load_dotenv
 from random import randint
+import liste
 import json
 import asyncio
 import random
@@ -31,15 +32,9 @@ ladro = []
 refurtiva = []
 rapina = False
 
-usabili = ["una pozione rossa [R] [usabile]", "qualche goccia d'acqua [C] [usabile]", "un raggio di sole [C] [usabile]",
-           "una piuma di fenice [L] [usabile]"]
-
-bullets = ["un sasso [C]", "una scarpa [C]", "una matita [C]", "una cernia [R]", "un dildo glitterato [E]",
-           "una mela [C]", "una zucchina ambigua [NC]", "un telecomando [C]", "un cartone di Tavernello [C]",
-           "una freccetta tranquillante [S]", "un'onda energetica [Admin]", "una forchetta [C]",
-           "un controller wireless PS Cinque [R]", "una banana [C]", "del salame [R]", "un'antica urna polverosa [L]"]
-
-raritylist = ["[Admin]", "[S]", "[L]", "[E]", "[R]", "[NC]", "[C]"]
+usabili = liste.usabili
+bullets = liste.bullets
+raritylist = liste.raritylist
 
 
 async def main():
@@ -678,67 +673,74 @@ async def usehandler(event):
             await event.edit("Non si sa ancora a cosa possa servire questo oggetto!")
         elif "raggio" in check:
             await event.edit("Non si sa ancora a cosa possa servire questo oggetto!")
-        databullet = check.split("_")[1]
-        bullet = [matchx for matchx in bullets if databullet in matchx][0]
-        target = check.split("_")[2]
-        idtarget = registrati[target]
-        print(bullet, target)
-        if "freccetta" in check:
-            print(sonno)
-            my_dict = await opendict(uid)
-            my_dict["Inventario"].remove(bullet)
-            my_dict["Lancio"] = True
-            await writedict(uid, my_dict)
-            await freccetta(target, event, uid)
-            return
-        elif "energetica" in check:
-            my_dict = await opendict(idtarget)
-            vita = int(my_dict["HP"])
-            danni = vita
-            my_dict["HP"] = vita - danni
-            await writedict(idtarget, my_dict)
-            await event.edit("Hai lanciato {} a {} e gli hai tolto {} HP!".format(bullet, target, danni))
-            await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha "
-                                             "tolto {} HP!".format(sender, bullet, danni))
-            if event.is_group:
-                await event.edit("{} ha lanciato {} a {} e gli ha tolto {} HP!".format(sender, bullet, target, danni))
-            await controllohp(target, event)
-        elif "urna" in check:
-            my_dict = await opendict(uid)
-            my_dict["Inventario"].remove(bullet)
-            my_dict["Lancio"] = True
-            await writedict(uid, my_dict)
-            await event.edit("L'antica urna va in mille pezzi sui piedi di {}!".format(target))
-            await bot.send_message(idtarget, "L'antica urna lanciata da {} va in frantumi sui tuoi piedi e subito dopo"
-                                             " uno strano spettro con un cucchiaio in mano appare davanti"
-                                             " a te!".format(sender, bullet))
-            if event.is_group:
-                await event.edit("L'antica urna lanciata da {} va in mille pezzi sui"
-                                 " piedi di {}!".format(sender, target))
-            cursed.append(target)
-            await aspettalancia(uid)
-            await curse(event, target)
-            return
-        else:
-            danni = randint(1, 6)
-            my_dict = await opendict(uid)
-            my_dict["Inventario"].remove(bullet)
-            my_dict["Lancio"] = True
-            await writedict(uid, my_dict)
-            await event.edit("Hai lanciato {} a {} e gli hai tolto {} HP!".format(bullet, target, danni))
-            my_dict = await opendict(idtarget)
-            vita = int(my_dict["HP"])
-            my_dict["HP"] = vita - danni
-            await writedict(idtarget, my_dict)
-            await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha "
-                                             "tolto {} HP!".format(sender, bullet, danni))
-            if event.is_group:
-                await event.edit("{} ha lanciato {} a {} e gli ha tolto {} HP!".format(sender, bullet, target, danni))
-            if target in sonno:
-                sonno.remove(target)
-                await bot.send_message(target, "Il colpo ti ha svegliato!")
-            await controllohp(target, event)
-            await aspettalancia(uid)
+
+
+@bot.on(events.CallbackQuery())
+async def throwhandler(event):
+    uid = (await event.get_sender()).id
+    check = event.data.decode("ascii")
+    sender = (await event.get_sender()).username
+    databullet = check.split("_")[1]
+    bullet = [matchx for matchx in bullets if databullet in matchx][0]
+    target = check.split("_")[2]
+    idtarget = registrati[target]
+    print(bullet, target)
+    if "freccetta" in check:
+        print(sonno)
+        my_dict = await opendict(uid)
+        my_dict["Inventario"].remove(bullet)
+        my_dict["Lancio"] = True
+        await writedict(uid, my_dict)
+        await freccetta(target, event, uid)
+        return
+    elif "energetica" in check:
+        my_dict = await opendict(idtarget)
+        vita = int(my_dict["HP"])
+        danni = vita
+        my_dict["HP"] = vita - danni
+        await writedict(idtarget, my_dict)
+        await event.edit("Hai lanciato {} a {} e gli hai tolto {} HP!".format(bullet, target, danni))
+        await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha "
+                                         "tolto {} HP!".format(sender, bullet, danni))
+        if event.is_group:
+            await event.edit("{} ha lanciato {} a {} e gli ha tolto {} HP!".format(sender, bullet, target, danni))
+        await controllohp(target, event)
+    elif "urna" in check:
+        my_dict = await opendict(uid)
+        my_dict["Inventario"].remove(bullet)
+        my_dict["Lancio"] = True
+        await writedict(uid, my_dict)
+        await event.edit("L'antica urna va in mille pezzi sui piedi di {}!".format(target))
+        await bot.send_message(idtarget, "L'antica urna lanciata da {} va in frantumi sui tuoi piedi e subito dopo"
+                                         " uno strano spettro con un cucchiaio in mano appare davanti"
+                                         " a te!".format(sender, bullet))
+        if event.is_group:
+            await event.edit("L'antica urna lanciata da {} va in mille pezzi sui"
+                             " piedi di {}!".format(sender, target))
+        cursed.append(target)
+        await aspettalancia(uid)
+        await curse(event, target)
+        return
+    else:
+        danni = randint(1, 6)
+        my_dict = await opendict(uid)
+        my_dict["Inventario"].remove(bullet)
+        my_dict["Lancio"] = True
+        await writedict(uid, my_dict)
+        await event.edit("Hai lanciato {} a {} e gli hai tolto {} HP!".format(bullet, target, danni))
+        my_dict = await opendict(idtarget)
+        vita = int(my_dict["HP"])
+        my_dict["HP"] = vita - danni
+        await writedict(idtarget, my_dict)
+        await bot.send_message(idtarget, "{} ti ha lanciato {} e ti ha "
+                                         "tolto {} HP!".format(sender, bullet, danni))
+        if event.is_group:
+            await event.edit("{} ha lanciato {} a {} e gli ha tolto {} HP!".format(sender, bullet, target, danni))
+        if target in sonno:
+            sonno.remove(target)
+            await bot.send_message(target, "Il colpo ti ha svegliato!")
+        await controllohp(target, event)
+        await aspettalancia(uid)
 
 
 async def edititem(event):
