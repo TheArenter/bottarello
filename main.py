@@ -2,6 +2,7 @@ from telethon import events, TelegramClient
 from telethon.tl.custom import Button
 from dotenv import load_dotenv
 from random import randint
+from datetime import datetime
 import liste
 import json
 import asyncio
@@ -16,6 +17,9 @@ api_id = os.environ['API_ID']
 owner = os.environ['OWNER']
 
 bot = TelegramClient('bot', int(api_id), api_hash).start(bot_token=bot_token)
+
+now = datetime.now()
+dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 
 lastmessage = ""
 
@@ -783,6 +787,7 @@ async def invitems(event):
 async def curse(event, target):
     chat = await event.get_input_chat()
     targetid = registrati[target]
+    print(target, targetid)
     if target in infermeria:
         await bot.send_message(chat, "Il tuo obbiettivo è già malconcio, lo spettro dopo qualche secondo "
                                      "svanisce nel nulla!")
@@ -790,27 +795,48 @@ async def curse(event, target):
         return
     else:
         my_dict = await opendict(targetid)
-        my_dict["HP"] -= 1
-        await writedict(targetid, my_dict)
-        await bot.send_message(targetid, "Lo strano spettro ti colpisce con il cucchiaio e ti leva 1 HP!")
-        if my_dict["HP"] == 0:
-            infermeria.append(target)
-            await bot.send_message(targetid, "Un ultimo colpo e vedi lo spettro svanire mentre crolli a terra!")
-            await asyncio.sleep(900)
-            if target in cursed:
-                cursed.remove(target)
-            if target in infermeria:
-                infermeria.remove(target)
-                print(infermeria, "uscita", target)
-                my_dict = await opendict(targetid)
-                my_dict["HP"] = 50
-                await writedict(targetid, my_dict)
-                await bot.send_message(targetid, "Ti sgranchisci le gambe ed esci dall'infermeria!")
-                if event.is_group:
-                    await bot.send_message(chat, "{} è di nuovo in piena forma!".format(target))
-        else:
+        while my_dict["HP"] > 0:
             await asyncio.sleep(300)
-            await curse(event, target)
+            my_dict["HP"] -= 1
+            print(my_dict["HP"])
+            await writedict(targetid, my_dict)
+            await bot.send_message(targetid, "Lo strano spettro ti colpisce con il cucchiaio e ti leva 1 HP!")
+        infermeria.append(target)
+        print(dt_string, infermeria, "ingresso", target)
+        await bot.send_message(targetid, "Un ultimo colpo e vedi lo spettro svanire mentre crolli a terra!")
+        await asyncio.sleep(900)
+        if target in cursed:
+            cursed.remove(target)
+        if target in infermeria:
+            infermeria.remove(target)
+            print(dt_string, infermeria, "uscita", target)
+            my_dict = await opendict(targetid)
+            my_dict["HP"] = 50
+            await writedict(targetid, my_dict)
+            await bot.send_message(targetid, "Ti sgranchisci le gambe ed esci dall'infermeria!")
+            if event.is_group:
+                await bot.send_message(chat, "{} è di nuovo in piena forma!".format(target))
+#        my_dict["HP"] -= 1
+#        await writedict(targetid, my_dict)
+#        await bot.send_message(targetid, "Lo strano spettro ti colpisce con il cucchiaio e ti leva 1 HP!")
+#        if my_dict["HP"] == 0:
+#            infermeria.append(target)
+#            await bot.send_message(targetid, "Un ultimo colpo e vedi lo spettro svanire mentre crolli a terra!")
+#            await asyncio.sleep(900)
+#            if target in cursed:
+#                cursed.remove(target)
+#            if target in infermeria:
+#                infermeria.remove(target)
+#                print(infermeria, "uscita", target)
+#                my_dict = await opendict(targetid)
+#                my_dict["HP"] = 50
+#                await writedict(targetid, my_dict)
+#                await bot.send_message(targetid, "Ti sgranchisci le gambe ed esci dall'infermeria!")
+#                if event.is_group:
+#                    await bot.send_message(chat, "{} è di nuovo in piena forma!".format(target))
+#        else:
+#            await asyncio.sleep(300)
+#            await curse(event, target)
 
 
 @bot.on(events.NewMessage(pattern=r'(?i).*heck'))
@@ -818,6 +844,16 @@ async def handler(event):
     await event.delete()
     sender = await event.get_sender()
     print("Deleted: " + event.raw_text + " sent by " + sender.username + " " + str(event.sender_id))
+
+
+async def test():
+    hp = 5
+    while hp > 0:
+        await asyncio.sleep(5)
+        print(hp)
+        hp -= 1
+    await asyncio.sleep(5)
+    print("Sei morto", hp)
 
 
 with bot:
@@ -877,7 +913,8 @@ with bot:
             else:
                 await bot.send_message(sender, "Prima di poter usare qualunque comando ti devi registrare con /start")
 #        Comando di test per varie funzioni
-#        if '/test' in event.raw_text:
+        if '/test' in event.raw_text:
+            await test()
 #            await lancia(event)
 #            chat = await event.get_input_chat()
 #            text = "Hai rotto il cazzo"
