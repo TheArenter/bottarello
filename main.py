@@ -381,7 +381,7 @@ async def giveitem(event):
     sender = (await event.get_sender()).username
     parts = event.raw_text.split(" ", 3)
     print(parts)
-    if len(parts) < 3:
+    if len(parts) < 2:
         await bot.send_message(chat, "Per dare un oggeto usa /dai <Giocaotre> <Oggetto> <Quantità>")
     else:
         cont = parts[1]
@@ -723,7 +723,23 @@ async def throwhandler(event):
                              " piedi di {}!".format(sender, target))
         cursed.append(target)
         await aspettalancia(uid)
-        await curse(event, target)
+        await curse(event, target, bullet)
+        return
+    elif "cofanetto" in check:
+        my_dict = await opendict(uid)
+        my_dict["Inventario"].remove(bullet)
+        my_dict["Lancio"] = True
+        await writedict(uid, my_dict)
+        await event.edit("Il cofanetto vellutato cade per terra e si spalanca davanti ai piedi di {}!".format(target))
+        await bot.send_message(idtarget, "Il cofanetto vellutato lanciato da {} cade davanti ai tuoi piedi e si apre,"
+                                          " subito dopo uno strano spettro con un dildo borchiato in mano appare davanti"
+                                          " a te!".format(sender, bullet))
+        if event.is_group:
+            await event.edit("Il cofanetto vellutato lanciato da {} cade a terra e si apre davanti ai"
+                             " piedi di {}!".format(sender, target))
+        cursed.append(target)
+        await aspettalancia(uid)
+        await curse(event, target, bullet)
         return
     else:
         danni = randint(1, 6)
@@ -784,7 +800,7 @@ async def invitems(event):
     await bot.send_message(chat, text)
 
 
-async def curse(event, target):
+async def curse(event, target, bullet):
     chat = await event.get_input_chat()
     targetid = registrati[target]
     print(target, targetid)
@@ -800,7 +816,21 @@ async def curse(event, target):
             my_dict["HP"] -= 1
             print(my_dict["HP"])
             await writedict(targetid, my_dict)
-            await bot.send_message(targetid, "Lo strano spettro ti colpisce con il cucchiaio e ti leva 1 HP!")
+            if "urna" in bullet:
+                await bot.send_message(targetid, "Lo strano spettro ti colpisce con il cucchiaio e ti leva 1 HP!")
+            else:
+                if randint(1, 100) <= 30:
+                    await bot.send_message(targetid, "Lo strano spettro ti colpisce con il dildo borchiato e ti leva"
+                                                     " 1 HP!")
+                else:
+                    await bot.send_message(targetid, "Un colpo netto di dildo e vieni in modo mostruoso innaffiando lo"
+                                                     " spettro che svanisce sogghignando!")
+                    cursed.remove(target)
+                    my_dict = await opendict(targetid)
+                    my_dict["HP"] += 20
+                    await writedict(targetid, my_dict)
+                    await bot.send_message(targetid, "L'esperienza è stata strana ma piacevole, ti senti in forma!")
+                    return
         infermeria.append(target)
         print(dt_string, infermeria, "ingresso", target)
         await bot.send_message(targetid, "Un ultimo colpo e vedi lo spettro svanire mentre crolli a terra!")
