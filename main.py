@@ -852,7 +852,7 @@ async def handler(event):
 with bot:
     @bot.on(events.NewMessage)
     async def handler(event):
-        print(event)
+        #  print(event)
         #  global lastmessage
         #  lastmessage = event.raw_text
         sender = (await event.get_sender()).username
