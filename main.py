@@ -294,7 +294,7 @@ async def cercaoggetto(event):
     inventario = my_dict["Inventario"]
     parts = event.raw_text.split(" ", 1)
     if len(parts) <= 1:
-        await bot.send_message(chat, "Per cercare un oggeto usa /oggetti <Oggetto>")
+        await bot.send_message(chat, "Per cercare un oggeto usa /oggetto <Oggetto>")
     else:
         arg = parts[1].lower()
         if len(arg) < 2:
@@ -385,7 +385,7 @@ async def giveitem(event):
     sender = (await event.get_sender()).username
     parts = event.raw_text.split(" ", 3)
     if len(parts) != 4:
-        await bot.send_message(chat, "Per dare un oggeto usa /dai <Giocaotre> <Oggetto> <Quantità>")
+        await bot.send_message(chat, "Per dare un oggeto usa /giveitem <Giocaotre> <Oggetto> <Quantità>")
     else:
         cont = parts[1]
         gift = parts[2].lower()
